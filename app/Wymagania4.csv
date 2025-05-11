@@ -1,5 +1,5 @@
 Zagadnienie,Punktacja
-Projekt (FE, API, IdP) działa,5
+Projekt (FE API IdP) działa,5
 Dokeryzacja - projekt działa w kubernetes,4
 Dokeryzacja - bez kubernetesa ale app i IdP jest w dockerze (z volumenem),2
 Dokeryzacja - app odpałana lokalnie keycloak ma volumen z danymi,1
