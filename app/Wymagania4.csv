@@ -1,0 +1,18 @@
+Zagadnienie,Punktacja
+Projekt (FE, API, IdP) działa,5
+Dokeryzacja - projekt działa w kubernetes,4
+Dokeryzacja - bez kubernetesa ale app i IdP jest w dockerze (z volumenem),2
+Dokeryzacja - app odpałana lokalnie keycloak ma volumen z danymi,1
+Projekt jest dodany do projektu Technologii chmurowych,3
+FE jest zabezpieczony,4
+FE ma oddzielny panel admina niedostępny dla zwykłych użytkowników,2
+Przynajmniej jedno API jest zabezpieczone niezależnie od FE lub FE sam się autoryzuje do naszego BE,4
+Więcej niż jedno API jest zabezpieczone,1
+API zwraca różne wartości w zależności od roli użytkownika,2
+Zabezpieczenie zostało poprawnie zaprezentowane (mogę poprosić o wytłumaczenie flow),2
+Czystość kodu i repozytorium,2
+PKCE,1
+Suma,30
+Dodatkowe punkty - Aplikacje napisane w innym języku niż JS/TS (np. java rust),4
+Dodatkowe punkty - Dodane zabezpieczenia do projektu z zeszłego semestru (lub innego swojego większego projektu),4
+Dodatkowe punkty - FE korzysta ze stworzonego API,4

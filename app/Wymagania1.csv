@@ -1,0 +1,31 @@
+Źródło / Funkcjonalność,Kryterium,Szczegóły,Wartość procentowa (%),Obliczona liczba punktów
+Funkcjonalny,Zarządzanie użytkownikami i autentykacja,"Rejestracja, logowanie, odzyskiwanie hasła, zarządzanie profilem użytkownika oraz autentykacja z użyciem różnych metod (lokalna, OAuth)",6,1.5
+Funkcjonalny,Podstawowe zarządzanie zadaniami,"Tworzenie, edycja, usuwanie i pobieranie zadań z możliwością ustawiania tytułu, opisu, priorytetu, terminu wykonania oraz statusu",7,1.75
+Funkcjonalny,Zarządzanie kategoriami i tagami,"Tworzenie i zarządzanie kategoriami oraz tagami dla zadań, umożliwiając organizację i filtrowanie zadań",5,1.25
+Funkcjonalny,Zarządzanie projektami,"Tworzenie i zarządzanie projektami, do których można przypisywać zadania oraz użytkowników, z możliwością określania ról projektowych",6,1.5
+Funkcjonalny,Współpraca i udostępnianie,"Udostępnianie zadań i projektów innym użytkownikom, przydzielanie zadań oraz zarządzanie uprawnieniami dostępu dla współpracowników",5,1.25
+Funkcjonalny,Wyszukiwanie i filtrowanie,"Zaawansowane wyszukiwanie i filtrowanie zadań według różnych kryteriów (termin, priorytet, status, kategoria, tag) z możliwością sortowania wyników i paginacji",6,1.5
+Funkcjonalny,Powiadomienia i przypomnienia,"System powiadomień o zbliżających się terminach zadań, zmianach statusu zadań oraz aktywnościach współpracowników",4,1
+Funkcjonalny,Import i eksport danych,"Import i eksport zadań i projektów w różnych formatach (CSV, JSON, iCal) z możliwością synchronizacji z zewnętrznymi kalendarzami",4,1
+Funkcjonalny,Zadania cykliczne,"Zarządzanie powtarzającymi się zadaniami z możliwością definiowania wzorców powtarzania (codziennie, tygodniowo, miesięcznie) oraz wyjątków",5,1.25
+Funkcjonalny,Raporty i statystyki,Generowanie raportów i statystyk dotyczących postępów w realizacji zadań i projektów z możliwością filtrowania według różnych parametrów,2,0.5
+Wymagania techniczne Bazy danych II,Konfiguracja Routingu i Podstawowych Middleware w Express.js,,4,1
+Wymagania techniczne Bazy danych II,Implementacja Centralnej Obsługi Błędów w Express.js,,4,1
+Wymagania techniczne Bazy danych II,Definicja Zakresu i Odpowiedzialności Pojedynczego Mikroserwisu,,3,0.75
+Wymagania techniczne Bazy danych II,Definicja Zapytań REST API Między Mikroserwisami,,4,1
+Wymagania techniczne Bazy danych II,"Połączenie, ORM i Migracje Relacyjnej Bazy Danych",,4,1
+Wymagania techniczne Bazy danych II,"Implementacja Zapytań Relacyjnych (Złączenia / Joins, Transakcje) i Optymalizacja (Indeksy)",,5,1.25
+Wymagania techniczne Bazy danych II,Integracja z MongoDB: Modelowanie i Schematy (Mongoose),,4,1
+Wymagania techniczne Bazy danych II,"Zaawansowane Operacje MongoDB (Agregacje, Indeksy, GeoJSON)",,5,1.25
+Wymagania techniczne Bazy danych II,Implementacja Uwierzytelniania (np. JWT) i Autoryzacji (np. RBAC),,4,1
+Wymagania techniczne Bazy danych II,"Podstawowe Zabezpieczenia Aplikacji (Helmet, Rate Limit, Bcrypt)",,3,0.75
+Wymagania techniczne Bazy danych II,"Walidacja Danych Wejściowych (np. express-validator, Joi)",,3,0.75
+Wymagania techniczne Bazy danych II,Implementacja Testów Jednostkowych i Integracyjnych,,7,1.75
+Wymagania dodatkowe Bazy danych II,Zaawansowane Standardy Jakości Kodu i Statyczna Analiza,"Konfiguracja i wymuszanie użycia narzędzi do statycznej analizy kodu (np. ESLint z odpowiednimi pluginami), kontroli złożoności cyklomatycznej oraz spójnego formatowania kodu (np. Prettier).",3,0.75
+Wymagania dodatkowe Bazy danych II,Automatyczne Raportowanie Błędów Aplikacji,"Integracja aplikacji z zewnętrznym systemem do automatycznego zbierania, agregowania i powiadamiania o błędach występujących w aplikacji (np. Sentry, Bugsnag).",3,0.75
+Wymagania dodatkowe Bazy danych II,Zaawansowane Techniki Indeksowania Baz Danych,"Zastosowanie zaawansowanych technik indeksowania (np. indeksy częściowe, indeksy na wyrażeniach, indeksy dla wyszukiwania pełnotekstowego) w celu optymalizacji specyficznych zapytań.",4,1
+Wymagania dodatkowe Bazy danych II,Strategia Tworzenia Kopii Zapasowych (Backup) i Odzyskiwania Bazy Danych,"Opracowanie, wdrożenie i przetestowanie procedur regularnego tworzenia kopii zapasowych baz danych oraz ich odzyskiwania w przypadku awarii.",4,1
+Wymagania dodatkowe Bazy danych II,Optymalizacja i Tuning Puli Połączeń Bazodanowych,"Analiza i dostosowanie parametrów puli połączeń do baz danych (np. minimalna/maksymalna liczba połączeń, timeouty) w celu optymalizacji wydajności pod oczekiwanym obciążeniem.",3,0.75
+Wymagania dodatkowe Bazy danych II,Budowa Potoku CI/CD dla Niezależnego Wdrażania Mikroserwisów,"Zaprojektowanie i implementacja potoku CI/CD umożliwiającego automatyczne budowanie, testowanie i niezależne wdrażanie poszczególnych mikroserwisów.",4,1
+Wymagania dodatkowe Bazy danych II,Optymalizacja i Zabezpieczanie Obrazów Kontenerów (Docker),"Stworzenie zoptymalizowanych i bezpiecznych obrazów kontenerów Docker dla każdej usługi, minimalizacja rozmiaru i powierzchni ataku.",2,0.5
+Wymagania dodatkowe Bazy danych II,Automatyzacja Testów w Potoku CI/CD,"Integracja różnych poziomów testów (jednostkowych, integracyjnych, kontraktowych) z potokiem CI/CD jako automatyczne bramki jakości.",2,0.5

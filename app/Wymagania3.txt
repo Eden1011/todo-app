@@ -1,0 +1,11 @@
+Aktualne 2025 Wymagania do projektu
+
+Celem projektu jest zabezpieczenie FE oraz przynajmniej jednego API używając standardu OAuth 2.0. Mogą to być niezależne aplikacje.
+Termin oddania projektu to najpóźniej 26.06.2025 - Zachęcam do wcześniej oddawania
+Bliżej terminu podam godziny moich konsultacji (na wydziale i online), jeżeli ktoś będzie miał projekt gotowy wcześniej - możemy umówić się na prezentację we wcześniejszym terminie.
+Projekt można połączyć z projektem z Technologii chmurowych za dodatkowe punkty lub jako oddzielny projekt. W przypadku tworzenia oddzielnego projektu proszę stworzyć go tutaj, proszę podpisać swoim imieniem i nazwiskiem w pliku readme.md.
+Ocena projektu odbędzie się w trakcie prezentacji (max 10 min). Dla projektów łączonych (moje grupy 3 i 4) można zrobić jedną prezentację
+Proszę umieścić w projekcie krótkie readme z instrukcją jak odpalać wszystkie komponenty
+Projekt będzie oceniany według następujących kryteriów (kryteria mogą się jeszcze nieznacznie zmienić)
+
+
