@@ -11,7 +11,8 @@ model User {
   id                Int                @id @default(autoincrement())
   username          String             @unique
   email             String             @unique
-  password          String // Stored as hash
+  password          String? // Optional for googlers
+  googleId          String?            @unique
   refreshTokens     RefreshToken[]
   isVerified        Boolean            @default(false)
   emailVerification EmailVerification?

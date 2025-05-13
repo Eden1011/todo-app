@@ -112,7 +112,7 @@ async function login(username, email, password) {
       }
     });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !(bcrypt.compare(password, user.password))) {
       throw new AuthenticationError("Invalid credentials");
     }
 
@@ -265,7 +265,7 @@ async function changePassword(refreshToken, username, email, oldPassword, newPas
       throw new AuthorizationError("Token does not match user");
     }
 
-    if (!(await bcrypt.compare(oldPassword, user.password))) {
+    if (!(bcrypt.compare(oldPassword, user.password))) {
       throw new AuthenticationError("Invalid old password");
     }
 
@@ -320,7 +320,7 @@ async function removeUser(refreshToken, username, email, password) {
       throw new AuthorizationError("Token does not match user");
     }
 
-    if (!(await bcrypt.compare(password, user.password))) {
+    if (!(bcrypt.compare(password, user.password))) {
       throw new AuthenticationError("Invalid password");
     }
 
