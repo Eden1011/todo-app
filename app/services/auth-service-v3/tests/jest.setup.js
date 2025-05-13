@@ -23,5 +23,3 @@ console.warn = jest.fn();
 global.beforeEach(() => {
   jest.clearAllMocks();
 });
-
-p

@@ -21,12 +21,16 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use(morgan("dev"));
 
-app.use("/local", local.email, local.token, local.user);
+app.use("/local/email", local.email);
+app.use("/local/token", local.token);
+app.use("/local/user", local.user);
+
 app.use("/oauth", oauth.google);
 
 (() => {
-  if (process.env.NODE_ENV = "development") {
-    app.use("/test", require("./view/view.route.js"))
+  if (process.env.NODE_ENV === "development") {
+    app.use('/test', express.static(path.join(__dirname, 'view')));
+    app.use("/test", require("./view/view.route.js"));
   }
 })()
 

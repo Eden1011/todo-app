@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto")
 
 function generateAccessToken(userId) {
   const expiresIn = process.env.ACCESS_TOKEN_EXPIRATION || "15m";

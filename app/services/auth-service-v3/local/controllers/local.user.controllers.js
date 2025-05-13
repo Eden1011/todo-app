@@ -249,11 +249,11 @@ async function registerWithAutoLogin(username, email, password) {
   });
 }
 
-module.exports = [
+module.exports = {
   register,
   login,
   registerWithAutoLogin,
   changePassword,
   logout,
   removeUser
-]
+}

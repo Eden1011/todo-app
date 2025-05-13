@@ -2,7 +2,8 @@
 <html>
   <head>
     <title>Test Auth System</title>
-    <link rel="stylesheet" href="./styles.css">    </head>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
   <body>
     <div class="container">
       <h1>Testowa Platforma Autentykacji</h1>
@@ -63,7 +64,7 @@
       <div id="GoogleTab" class="tabcontent">
         <h2>Logowanie przez Google</h2>
         <p>Kliknij poniższy przycisk, aby zalogować się lub zarejestrować przez Google:</p>
-        <a href="/auth/google" class="btn">Zaloguj przez Google</a>
+        <a href="/oauth/google" class="btn">Zaloguj przez Google</a>
         <div id="google-result" class="result"></div>
       </div>
 
@@ -73,7 +74,7 @@
         <div id="link-info">
           <p>Musisz być zalogowany, aby połączyć konto z Google.</p>
         </div>
-        <a href="/auth/google" class="btn" id="link-google-btn" style="display:none;">Połącz z Google</a>
+        <a href="/oauth/google" class="btn" id="link-google-btn" style="display:none;">Połącz z Google</a>
         <div id="link-result" class="result"></div>
       </div>
 
@@ -101,16 +102,16 @@
         if (data) {
           if (typeof data === 'object') {
             try {
-              formattedMessage += '\\n' + JSON.stringify(data, null, 2);
+              formattedMessage += '\n' + JSON.stringify(data, null, 2);
             } catch (e) {
-              formattedMessage += '\\n[Obiekt nie może być serializowany]';
+              formattedMessage += '\n[Obiekt nie może być serializowany]';
             }
           } else {
-            formattedMessage += '\\n' + data;
+            formattedMessage += '\n' + data;
           }
         }
 
-        debugOutput.textContent = formattedMessage + '\\n\\n' + debugOutput.textContent;
+        debugOutput.textContent = formattedMessage + '\n\n' + debugOutput.textContent;
         console.log(message, data);
       };
 
@@ -212,7 +213,7 @@
 
         debugLog('Weryfikacja tokenu dostępu...');
 
-        fetch('/auth/verify', {
+        fetch('/local/token/verify', {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + accessToken
@@ -281,7 +282,7 @@
         resultDiv.innerHTML = '<p>Weryfikacja...</p>';
         debugLog('Weryfikacja tokenu na żądanie użytkownika');
 
-        fetch('/auth/verify', {
+        fetch('/local/token/verify', {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + accessToken
@@ -328,7 +329,7 @@
 
         resultDiv.innerHTML = '<p>Rejestracja...</p>';
 
-        fetch('/auth/register', {
+        fetch('/local/user/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -378,7 +379,7 @@
         const identifier = document.getElementById('login-identifier').value;
         const password = document.getElementById('login-password').value;
 
-        const isEmail = /\\S+@\\S+\\.\\S+/.test(identifier);
+        const isEmail = /\S+@\S+\.\S+/.test(identifier);
         const loginData = {
           password
         };
@@ -392,7 +393,7 @@
         debugLog('Rozpoczęcie logowania', { identifier, isEmail, password: '********' });
         resultDiv.innerHTML = '<p>Logowanie...</p>';
 
-        fetch('/auth/login', {
+        fetch('/local/user/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -437,7 +438,7 @@
         if (refreshToken) {
           debugLog('Rozpoczęcie wylogowania');
 
-          fetch('/auth/logout', {
+          fetch('/local/user/logout', {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
