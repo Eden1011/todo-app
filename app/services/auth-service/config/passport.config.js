@@ -13,7 +13,7 @@ passport.use(new GoogleStrategy({
   callbackURL: `${process.env.APP_URL}/auth/google/callback`,
   passReqToCallback: true
 },
-  async function(req, accessToken, refreshToken, profile, cb) {
+  async function(_req, _googleAccessToken, _googleRefreshToken, profile, cb) {
     try {
       let user = await prisma.user.findFirst({
         where: {
@@ -43,22 +43,22 @@ passport.use(new GoogleStrategy({
         });
       }
 
-      const jwtAccessToken = generateAccessToken(user.id);
-      const jwtRefreshToken = generateRefreshToken(user.id);
+      const accessToken = generateAccessToken(user.id);
+      const refreshToken = generateRefreshToken(user.id);
 
       const expirationMs = convertTimeToMilliseconds(process.env.REFRESH_TOKEN_EXPIRATION || "1h");
       const expiresAt = new Date(Date.now() + expirationMs);
 
       await prisma.refreshToken.create({
         data: {
-          token: jwtRefreshToken,
+          token: refreshToken,
           userId: user.id,
           expiresAt
         }
       });
 
-      user.accessToken = jwtAccessToken;
-      user.refreshToken = jwtRefreshToken;
+      user.accessToken = accessToken;
+      user.refreshToken = refreshToken;
 
       return cb(null, user);
     } catch (err) {
