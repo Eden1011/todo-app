@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.APP_URL}/auth/google/callback`,
+  callbackURL: `${process.env.APP_URL}/${process.env.OAUTH_URI}/${process.env.OAUTH_GOOGLE_URI}/${process.env.OAUTH_GOOGLE_CALLBACK_URI}`,
   passReqToCallback: true
 },
   async function(_req, _googleAccessToken, _googleRefreshToken, profile, cb) {

@@ -29,7 +29,7 @@ app.use("/oauth", oauth.google);
 
 (() => {
   if (process.env.NODE_ENV === "development") {
-    app.use('/test', express.static(path.join(__dirname, 'view')));
+    app.use('/test', express.static(require("path").join(__dirname, 'view')));
     app.use("/test", require("./view/view.route.js"));
   }
 })()
