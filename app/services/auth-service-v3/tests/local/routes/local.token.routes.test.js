@@ -31,17 +31,14 @@ describe("Token Routes", () => {
     jest.clearAllMocks();
     mockPrismaClient.$transaction.mockImplementation(async (callback) => callback(mockPrismaClient));
 
-    // Set up test environment
     process.env.ACCESS_TOKEN_SECRET = "test-access-token-secret";
     process.env.REFRESH_TOKEN_SECRET = "test-refresh-token-secret";
 
-    // Create a mock Express app
     app = express();
     app.use(express.json());
     app.use("/", tokenRoutes);
     app.use(errorHandler);
 
-    // Silence console.error during tests
     jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
@@ -61,7 +58,6 @@ describe("Token Routes", () => {
         user: { id: 1, isVerified: true },
       });
 
-      // Mock JWT verify to call callback with decoded token
       jwt.verify.mockImplementation((token, secret, callback) => {
         callback(null, { id: 1 });
       });

@@ -33,7 +33,6 @@ const { generateAccessToken, generateRefreshToken } = require("../../../utils/to
 const { ConflictError, AuthenticationError, AuthorizationError, NotFoundError } = require("../../../shared-middleware/error.custom.js");
 const sendVerificationEmail = require("../../../utils/email.utils.js");
 
-// Mock actual implementation of the controller instead of testing real one
 jest.mock("../../../local/controllers/local.user.controllers.js", () => {
   const originalModule = jest.requireActual("../../../local/controllers/local.user.controllers.js");
 

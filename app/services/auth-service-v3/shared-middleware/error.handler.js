@@ -12,13 +12,15 @@ class AppError extends Error {
 }
 
 function errorHandler(err, req, res, _) {
-  console.error('Error occurred:', {
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-    path: req.path,
-    method: req.method,
-    timestamp: new Date().toISOString()
-  });
+  if (process.env.NODE_ENV !== "test") {
+    console.error('Error occurred:', {
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      path: req.path,
+      method: req.method,
+      timestamp: new Date().toISOString()
+    });
+  }
 
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal server error';

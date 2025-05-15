@@ -74,7 +74,6 @@ describe("User Routes", () => {
         expiresAt: new Date(),
       });
 
-      // For auto-login flow
       process.env.AUTO_LOGIN_AFTER_REGISTER = "true";
       generateAccessToken.mockReturnValue("access-token");
       generateRefreshToken.mockReturnValue("refresh-token");

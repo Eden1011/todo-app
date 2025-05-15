@@ -46,7 +46,6 @@ describe("Local Auth Integration Tests", () => {
 
   describe("Complete Local Auth Flow", () => {
     it("should complete the full local auth flow", async () => {
-      // Step 1: Register a new user
       const userData = {
         username: "testuser",
         email: "test@example.com",
@@ -76,7 +75,6 @@ describe("Local Auth Integration Tests", () => {
       expect(registerResponse.body.success).toBe(true);
       expect(registerResponse.body.data.user.username).toBe(userData.username);
 
-      // Step 2: Verify email
       mockPrismaClient.emailVerification.findUnique.mockResolvedValue({
         id: 1,
         userId: 1,
@@ -93,7 +91,6 @@ describe("Local Auth Integration Tests", () => {
       expect(verifyResponse.body.success).toBe(true);
       expect(verifyResponse.body.data.message).toBe("Email verified successfully");
 
-      // Step 3: Login
       mockPrismaClient.user.findFirst.mockResolvedValue({
         id: 1,
         username: userData.username,
@@ -118,7 +115,6 @@ describe("Local Auth Integration Tests", () => {
       expect(loginResponse.body.data).toHaveProperty("accessToken", "access-token");
       expect(loginResponse.body.data).toHaveProperty("refreshToken", "refresh-token");
 
-      // Step 4: Verify token
       jwt.verify = jest.fn((token, secret, callback) => {
         callback(null, { id: 1 });
       });
@@ -132,7 +128,6 @@ describe("Local Auth Integration Tests", () => {
       expect(verifyTokenResponse.body.data.valid).toBe(true);
       expect(verifyTokenResponse.body.data.user).toEqual({ id: 1 });
 
-      // Step 5: Refresh token
       mockPrismaClient.refreshToken.findUnique.mockResolvedValue({
         id: 1,
         token: "refresh-token",
@@ -151,7 +146,6 @@ describe("Local Auth Integration Tests", () => {
       expect(refreshResponse.body.success).toBe(true);
       expect(refreshResponse.body.data).toHaveProperty("accessToken", "new-access-token");
 
-      // Step 6: Change password
       mockPrismaClient.refreshToken.findUnique.mockResolvedValue({
         id: 1,
         token: "refresh-token",
@@ -182,7 +176,6 @@ describe("Local Auth Integration Tests", () => {
       expect(changePasswordResponse.body.success).toBe(true);
       expect(changePasswordResponse.body.data.message).toBe("Password changed successfully");
 
-      // Step 7: Login with new password
       mockPrismaClient.user.findFirst.mockResolvedValue({
         id: 1,
         username: userData.username,
@@ -207,7 +200,6 @@ describe("Local Auth Integration Tests", () => {
       expect(newLoginResponse.body.data).toHaveProperty("accessToken");
       expect(newLoginResponse.body.data).toHaveProperty("refreshToken");
 
-      // Step 8: Logout
       const logoutResponse = await request(app)
         .delete("/local/user/logout")
         .send({ token: newLoginResponse.body.data.refreshToken });
@@ -215,7 +207,6 @@ describe("Local Auth Integration Tests", () => {
       expect(logoutResponse.status).toBe(204);
       expect(mockPrismaClient.refreshToken.deleteMany).toHaveBeenCalled();
 
-      // Step 9: Remove user account
       mockPrismaClient.refreshToken.findUnique.mockResolvedValue({
         id: 1,
         token: newLoginResponse.body.data.refreshToken,
