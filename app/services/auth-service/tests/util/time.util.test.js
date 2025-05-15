@@ -1,4 +1,4 @@
-const convertTimeToMilliseconds = require("../../utils/time.util.js")
+const convertTimeToMilliseconds = require("../../utils/time.utils.js")
 
 describe("convertTimeToMilliseconds", () => {
   describe("Valid time conversions", () => {
