@@ -9,8 +9,8 @@ const {
   tokenValidation,
   logoutValidation,
   verifyEmailValidation,
-} = require("../routes/auth.validator");
-const { errorHandler } = require("../middleware/error.middleware");
+} = require("../../../local/middleware/local.validator.js");
+const { errorHandler } = require("../../../shared-middleware/error.handler.js");
 
 const createTestApp = (validationMiddleware) => {
   const app = express();
