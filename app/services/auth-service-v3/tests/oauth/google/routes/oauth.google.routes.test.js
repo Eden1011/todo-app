@@ -11,16 +11,6 @@ jest.mock("crypto");
 const app = express();
 app.use(express.json());
 
-// Create simple error handler middleware
-const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal server error';
-  res.status(statusCode).json({
-    success: false,
-    error: message
-  });
-};
-
 // Mock passport authenticate
 const mockAuthFn = jest.fn().mockImplementation((req, res, next) => {
   if (req.path === "/google/callback") {
@@ -29,19 +19,22 @@ const mockAuthFn = jest.fn().mockImplementation((req, res, next) => {
   next();
 });
 
-passport.authenticate.mockImplementation(() => mockAuthFn);
+passport.authenticate.mockImplementation((strategy, options) => {
+  return mockAuthFn;
+});
 
 // Mock crypto.randomBytes
 crypto.randomBytes.mockImplementation(() => ({
   toString: jest.fn().mockReturnValue("random-state")
 }));
 
-// Define explicit routes for testing
+// Define routes for testing
 app.get('/google', (req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
   passport.authenticate('google', {
     session: false,
     scope: ['profile', 'email'],
-    state: crypto.randomBytes(16).toString('hex')
+    state
   })(req, res, () => {
     res.status(200).send('OAuth initiated');
   });
@@ -56,15 +49,12 @@ app.get('/google/callback', (req, res) => {
   });
 });
 
-app.get('/login-failed', (req, res) => {
+app.get('/login-failed', (_, res) => {
   res.status(401).json({
     success: false,
     error: "Login using Google failed"
   });
 });
-
-// Add the error handler to the app
-app.use(errorHandler);
 
 describe("Google OAuth Routes", () => {
   beforeEach(() => {

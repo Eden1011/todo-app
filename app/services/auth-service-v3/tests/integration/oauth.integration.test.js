@@ -5,30 +5,35 @@ jest.mock("@prisma/client");
 jest.mock("../../utils/token.utils.js");
 
 // Mock passport
-jest.mock("passport", () => ({
-  initialize: jest.fn(() => (req, res, next) => next()),
-  authenticate: jest.fn(() => (req, res, next) => {
-    req.user = {
-      id: 1,
-      username: "googleuser@example.com",
-      email: "googleuser@example.com",
-      googleId: "google-user-id",
-      isVerified: true,
-      accessToken: "google-access-token",
-      refreshToken: "google-refresh-token"
-    };
-    next();
-  })
-}));
+jest.mock("passport", () => {
+  const mockPassport = {
+    initialize: jest.fn(() => (req, res, next) => next()),
+    authenticate: jest.fn(() => (req, res, next) => {
+      req.user = {
+        id: 1,
+        username: "googleuser@example.com",
+        email: "googleuser@example.com",
+        googleId: "google-user-id",
+        isVerified: true,
+        accessToken: "google-access-token",
+        refreshToken: "google-refresh-token"
+      };
+      next();
+    })
+  };
+  return mockPassport;
+});
 
 // Mock GoogleStrategy
-jest.mock("passport-google-oauth20", () => ({
-  Strategy: jest.fn((options, verifyCallback) => {
-    // Store the callback globally for test access
-    global.googleStrategyCallback = verifyCallback;
-    return { name: 'google' };
-  })
-}));
+jest.mock("passport-google-oauth20", () => {
+  return {
+    Strategy: jest.fn((options, verifyCallback) => {
+      // Store the callback globally for test access
+      global.googleStrategyCallback = verifyCallback;
+      return { name: 'google' };
+    })
+  };
+});
 
 // Create mock Prisma client
 const mockPrismaClient = {
@@ -40,28 +45,22 @@ const mockPrismaClient = {
   refreshToken: {
     create: jest.fn()
   },
-  $transaction: jest.fn().mockImplementation(async (callback) => callback(mockPrismaClient))
+  $transaction: jest.fn(async (callback) => callback(mockPrismaClient))
 };
 require("@prisma/client").PrismaClient.mockImplementation(() => mockPrismaClient);
+
+// Import the token utils
+const { generateAccessToken, generateRefreshToken } = require("../../utils/token.utils.js");
 
 // Create mock Express app
 const express = require('express');
 const request = require('supertest');
 const passport = require('passport');
-const { generateAccessToken, generateRefreshToken } = require("../../utils/token.utils.js");
 const mockApp = express();
 
 // Setup basic app
 mockApp.use(express.json());
 mockApp.use(passport.initialize());
-
-// Create simple error handler
-mockApp.use((err, req, res, next) => {
-  res.status(err.statusCode || 500).json({
-    success: false,
-    error: err.message || 'Server error'
-  });
-});
 
 // Mock routes
 mockApp.get('/oauth/google', (req, res) => res.status(200).send('OAuth initiated'));
@@ -80,16 +79,9 @@ mockApp.get('/oauth/login-failed', (req, res) => {
 describe("OAuth Integration Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrismaClient.$transaction.mockImplementation(async (callback) => callback(mockPrismaClient));
 
-    // Initialize Strategy to set the callback
-    require("passport-google-oauth20").Strategy({
-      clientID: "test-client-id",
-      clientSecret: "test-client-secret",
-      callbackURL: "http://localhost:3000/oauth/google/callback"
-    }, (req, accessToken, refreshToken, profile, done) => {
-      done(null, { id: 1 });
-    });
+    // Initialize the callback
+    require("../../oauth/google/config/passport/oauth.google.strategy.js");
   });
 
   describe("Google OAuth Flow", () => {
@@ -120,7 +112,7 @@ describe("OAuth Integration Tests", () => {
 
   describe("Google Strategy Integration", () => {
     it("should create a new user when logging in with Google for the first time", async () => {
-      // Verify callback is available
+      // Check that googleStrategyCallback is defined
       expect(global.googleStrategyCallback).toBeDefined();
 
       const googleProfile = {
@@ -145,7 +137,7 @@ describe("OAuth Integration Tests", () => {
       const mockRefreshToken = "google-refresh-token";
       const doneFn = jest.fn();
 
-      // Execute the strategy callback
+      // Call the callback directly
       await global.googleStrategyCallback(mockReq, mockAccessToken, mockRefreshToken, googleProfile, doneFn);
 
       expect(mockPrismaClient.user.findFirst).toHaveBeenCalledWith({
@@ -175,8 +167,6 @@ describe("OAuth Integration Tests", () => {
     });
 
     it("should link Google account to existing user", async () => {
-      expect(global.googleStrategyCallback).toBeDefined();
-
       const googleProfile = {
         id: "google-id-to-link",
         emails: [{ value: "existing@example.com" }]
