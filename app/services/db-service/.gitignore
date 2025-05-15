@@ -1,0 +1,8 @@
+node_modules
+package-lock.json
+generated
+prisma/migrations
+prisma/db.sqlite3
+prisma/db.sqlite3-journal
+prisma/test-integration.db
+prisma/test.db
