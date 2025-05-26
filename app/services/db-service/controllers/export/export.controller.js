@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const { getOrCreateUser } = require("./user/user.controller");
+const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
@@ -145,18 +145,17 @@ async function exportTasksToJSON(req, res) {
                       categories: {
                           include: {
                               category: {
-                                  select: { id: true, name: true, color: true },
+                                  select: { id: true, name: true },
                               },
                           },
                       },
                       tags: {
                           include: {
                               tag: {
-                                  select: { id: true, name: true, color: true },
+                                  select: { id: true, name: true },
                               },
                           },
                       },
-                      recurringPattern: true,
                   }
                 : {
                       owner: { select: { authId: true } },
@@ -540,11 +539,6 @@ async function exportUserDataBackup(req, res) {
                         tags: {
                             include: {
                                 tag: true,
-                            },
-                        },
-                        recurringPattern: {
-                            include: {
-                                exceptions: true,
                             },
                         },
                     },

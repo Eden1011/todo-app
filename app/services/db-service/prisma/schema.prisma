@@ -22,22 +22,24 @@ model User {
 }
 
 model Task {
-  id               Int               @id @default(autoincrement())
-  title            String
-  description      String?
-  priority         TaskPriority      @default(MEDIUM)
-  status           TaskStatus        @default(TODO)
-  dueDate          DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  ownerId          Int
-  owner            User              @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  assigneeId       Int?
-  assignee         User?             @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  projectId        Int?
-  project          Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  categories       CategoryOnTask[]
-  tags             TagOnTask[]
+  id                 Int               @id @default(autoincrement())
+  title              String
+  description        String?
+  priority           TaskPriority      @default(MEDIUM)
+  status             TaskStatus        @default(TODO)
+  dueDate            DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  ownerId            Int
+  owner              User              @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  assigneeId         Int?
+  assignee           User?             @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  projectId          Int?
+  project            Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  categories         CategoryOnTask[]
+  tags               TagOnTask[]
+  recurringPattern   RecurringPattern?
+  notifications      Notification[]
 
   @@index([ownerId])
   @@index([assigneeId])
@@ -132,10 +134,12 @@ model Notification {
   userId        Int
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   relatedTaskId Int?
+  relatedTask   Task?            @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
   createdAt     DateTime         @default(now())
 
   @@index([userId])
   @@index([isRead])
+  @@index([relatedTaskId])
 }
 
 model RecurringPattern {

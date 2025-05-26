@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const { getOrCreateUser } = require("../user/user.controller");
-const { notifyTaskStatusChanged } = require("../notification.controller");
+const {
+    notifyTaskStatusChanged,
+} = require("../notification/notification.controller");
 
 const prisma = new PrismaClient();
 
