@@ -16,9 +16,6 @@ model User {
   assignedTasks      Task[]          @relation("TaskAssignee")
   projectsOwned      Project[]       @relation("ProjectOwner")
   projectMemberships ProjectMember[]
-  categories         Category[]
-  tags               Tag[]
-  comments           Comment[]
   notifications      Notification[]
 }
 
@@ -37,21 +34,11 @@ model Task {
   assignee         User?             @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   projectId        Int?
   project          Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  parentTaskId     Int?
-  parentTask       Task?             @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks         Task[]            @relation("SubTasks")
-  categories       CategoryOnTask[]
-  tags             TagOnTask[]
+  categories       Category[]
+  tags             Tag[]
   comments         Comment[]
   recurringPattern RecurringPattern?
   isRecurring      Boolean           @default(false)
-
-  @@index([ownerId])
-  @@index([assigneeId])
-  @@index([projectId])
-  @@index([status])
-  @@index([priority])
-  @@index([dueDate])
 }
 
 model Project {
@@ -65,7 +52,6 @@ model Project {
   tasks       Task[]
   members     ProjectMember[]
 
-  @@index([ownerId])
 }
 
 model ProjectMember {
@@ -78,9 +64,6 @@ model ProjectMember {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  @@unique([projectId, userId])
-  @@index([projectId])
-  @@index([userId])
 }
 
 model Category {
@@ -93,7 +76,7 @@ model Category {
   updatedAt DateTime         @updatedAt
   tasks     CategoryOnTask[]
 
-  @@index([ownerId])
+
 }
 
 model CategoryOnTask {
@@ -103,9 +86,6 @@ model CategoryOnTask {
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now())
 
-  @@id([categoryId, taskId])
-  @@index([categoryId])
-  @@index([taskId])
 }
 
 model Tag {
@@ -118,7 +98,6 @@ model Tag {
   updatedAt DateTime    @updatedAt
   tasks     TagOnTask[]
 
-  @@index([ownerId])
 }
 
 model TagOnTask {
@@ -128,9 +107,6 @@ model TagOnTask {
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now())
 
-  @@id([tagId, taskId])
-  @@index([tagId])
-  @@index([taskId])
 }
 
 model Comment {
@@ -143,8 +119,6 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([taskId])
-  @@index([authorId])
 }
 
 model Notification {
@@ -157,8 +131,6 @@ model Notification {
   relatedTaskId Int?
   createdAt     DateTime         @default(now())
 
-  @@index([userId])
-  @@index([isRead])
 }
 
 model RecurringPattern {
