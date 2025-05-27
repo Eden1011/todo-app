@@ -30,17 +30,6 @@ app.use("/api/notification", authenticateToken, api.notification);
 app.use("/api/export", authenticateToken, api.export);
 app.use("/api/user", authenticateToken, api.user);
 
-// Development view routes
-(() => {
-    if (process.env.NODE_ENV === "development") {
-        app.use(
-            "/test",
-            express.static(require("path").join(__dirname, "view")),
-        );
-        app.use("/test", require("./view/view.route.js"));
-    }
-})();
-
 // Health check endpoint (unprotected)
 app.get("/health", (_req, res) => {
     res.status(200).json({
