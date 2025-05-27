@@ -81,6 +81,7 @@ model ProjectMember {
 model Category {
   id        Int              @id @default(autoincrement())
   name      String
+  color     String?          // Added color field
   ownerId   Int
   owner     User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
@@ -105,6 +106,7 @@ model CategoryOnTask {
 model Tag {
   id        Int         @id @default(autoincrement())
   name      String
+  color     String?     // Added color field
   ownerId   Int
   owner     User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())

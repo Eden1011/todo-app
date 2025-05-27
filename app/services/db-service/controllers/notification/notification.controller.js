@@ -65,15 +65,11 @@ async function getNotifications(req, res) {
                 take,
                 orderBy: { [sortBy]: sortOrder },
                 include: {
-                    relatedTaskId: {
-                        include: {
-                            task: {
-                                select: {
-                                    id: true,
-                                    title: true,
-                                    status: true,
-                                },
-                            },
+                    relatedTask: {
+                        select: {
+                            id: true,
+                            title: true,
+                            status: true,
                         },
                     },
                 },
@@ -123,16 +119,12 @@ async function getNotificationById(req, res) {
                 userId: user.id,
             },
             include: {
-                relatedTaskId: {
-                    include: {
-                        task: {
-                            select: {
-                                id: true,
-                                title: true,
-                                status: true,
-                                description: true,
-                            },
-                        },
+                relatedTask: {
+                    select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        description: true,
                     },
                 },
             },

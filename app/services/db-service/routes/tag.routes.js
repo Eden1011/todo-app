@@ -1,6 +1,26 @@
 const express = require("express");
 const { asyncHandler } = require("../middleware/error.handler");
 
+// Import rate limiters
+const {
+    generalLimiter,
+    createResourceLimiter,
+    updateLimiter,
+    deleteLimiter,
+    statsLimiter,
+    bulkOperationLimiter,
+} = require("../middleware/rate-limit");
+
+// Import validations
+const {
+    createTagValidation,
+    updateTagValidation,
+    idParamValidation,
+    paginationValidation,
+    bulkDeleteValidation,
+    handleValidationErrors,
+} = require("../middleware/validation");
+
 const {
     createTag,
     getTags,
@@ -15,15 +35,57 @@ const {
 const router = express.Router();
 
 // Basic tag operations
-router.post("/", asyncHandler(createTag));
-router.get("/", asyncHandler(getTags));
-router.get("/stats", asyncHandler(getTagStats));
-router.get("/popular", asyncHandler(getPopularTags));
-router.get("/:id", asyncHandler(getTagById));
-router.put("/:id", asyncHandler(updateTag));
-router.delete("/:id", asyncHandler(deleteTag));
+router.post(
+    "/",
+    createResourceLimiter,
+    createTagValidation,
+    handleValidationErrors,
+    asyncHandler(createTag),
+);
+
+router.get(
+    "/",
+    generalLimiter,
+    paginationValidation,
+    handleValidationErrors,
+    asyncHandler(getTags),
+);
+
+router.get("/stats", statsLimiter, asyncHandler(getTagStats));
+
+router.get("/popular", generalLimiter, asyncHandler(getPopularTags));
+
+router.get(
+    "/:id",
+    generalLimiter,
+    idParamValidation,
+    handleValidationErrors,
+    asyncHandler(getTagById),
+);
+
+router.put(
+    "/:id",
+    updateLimiter,
+    updateTagValidation,
+    handleValidationErrors,
+    asyncHandler(updateTag),
+);
+
+router.delete(
+    "/:id",
+    deleteLimiter,
+    idParamValidation,
+    handleValidationErrors,
+    asyncHandler(deleteTag),
+);
 
 // Bulk operations
-router.delete("/bulk", asyncHandler(bulkDeleteTags));
+router.delete(
+    "/bulk",
+    bulkOperationLimiter,
+    bulkDeleteValidation,
+    handleValidationErrors,
+    asyncHandler(bulkDeleteTags),
+);
 
 module.exports = router;

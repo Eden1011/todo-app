@@ -392,6 +392,13 @@ const exportValidation = [
         .withMessage("Detailed must be a boolean"),
 ];
 
+const searchUserValidation = [
+    query("query")
+        .isLength({ min: 2, max: 50 })
+        .withMessage("Search query must be between 2 and 50 characters")
+        .trim(),
+];
+
 function handleValidationErrors(req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -442,6 +449,7 @@ module.exports = {
     addMemberValidation,
     updateMemberRoleValidation,
 
+    searchUserValidation,
     // Common validations
     paginationValidation,
     bulkDeleteValidation,
