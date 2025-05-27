@@ -2,9 +2,6 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-/**
- * Get or create user by authId (from JWT token)
- */
 async function getOrCreateUser(authId) {
     try {
         let user = await prisma.user.findUnique({
@@ -23,15 +20,11 @@ async function getOrCreateUser(authId) {
     }
 }
 
-/**
- * Get user profile with statistics
- */
 async function getUserProfile(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
 
-        // Get user statistics
         const [taskCount, projectCount, categoryCount, tagCount] =
             await Promise.all([
                 prisma.task.count({ where: { ownerId: user.id } }),
@@ -40,14 +33,12 @@ async function getUserProfile(req, res) {
                 prisma.tag.count({ where: { ownerId: user.id } }),
             ]);
 
-        // Get task statistics by status
         const tasksByStatus = await prisma.task.groupBy({
             by: ["status"],
             where: { ownerId: user.id },
             _count: { id: true },
         });
 
-        // Get assigned tasks count
         const assignedTasksCount = await prisma.task.count({
             where: { assigneeId: user.id },
         });
@@ -82,16 +73,12 @@ async function getUserProfile(req, res) {
     }
 }
 
-/**
- * Get user's recent activity
- */
 async function getUserActivity(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const limit = parseInt(req.query.limit) || 10;
 
-        // Get recent tasks (created and assigned)
         const recentTasks = await prisma.task.findMany({
             where: {
                 OR: [{ ownerId: user.id }, { assigneeId: user.id }],
@@ -111,7 +98,6 @@ async function getUserActivity(req, res) {
             },
         });
 
-        // Get recent projects
         const recentProjects = await prisma.project.findMany({
             where: {
                 OR: [
@@ -146,9 +132,6 @@ async function getUserActivity(req, res) {
     }
 }
 
-/**
- * Search users for collaboration (by authId pattern)
- */
 async function searchUsers(req, res) {
     try {
         const { query } = req.query;
@@ -163,7 +146,7 @@ async function searchUsers(req, res) {
         const users = await prisma.user.findMany({
             where: {
                 authId: {
-                    not: req.user.id, // Exclude current user
+                    not: req.user.id,
                 },
             },
             select: {
@@ -186,9 +169,6 @@ async function searchUsers(req, res) {
     }
 }
 
-/**
- * Delete user account and all associated data
- */
 async function deleteUser(req, res) {
     try {
         const authId = req.user.id;
@@ -203,7 +183,6 @@ async function deleteUser(req, res) {
             });
         }
 
-        // Delete user and all cascading data
         await prisma.user.delete({
             where: { id: user.id },
         });

@@ -30,6 +30,17 @@ app.use("/api/notification", authenticateToken, api.notification);
 app.use("/api/export", authenticateToken, api.export);
 app.use("/api/user", authenticateToken, api.user);
 
+// Development view routes
+(() => {
+    if (process.env.NODE_ENV === "development") {
+        app.use(
+            "/test",
+            express.static(require("path").join(__dirname, "view")),
+        );
+        app.use("/test", require("./view/view.route.js"));
+    }
+})();
+
 // Health check endpoint (unprotected)
 app.get("/health", (_req, res) => {
     res.status(200).json({
@@ -48,6 +59,9 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`DB service running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
+    if (process.env.NODE_ENV === "development") {
+        console.log(`Test interface: http://localhost:${PORT}/test/dashboard`);
+    }
     console.log(
         `Auth service URL: ${process.env.AUTH_SERVICE_URL || "http://localhost:3000"}`,
     );
