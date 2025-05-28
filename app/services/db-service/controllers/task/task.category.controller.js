@@ -485,7 +485,6 @@ async function bulkAssignTasksToCategory(req, res) {
 
         const result = await prisma.categoryOnTask.createMany({
             data: taskAssignments,
-            skipDuplicates: true,
         });
 
         res.json({

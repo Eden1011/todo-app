@@ -485,7 +485,6 @@ async function bulkAssignTasksToTag(req, res) {
 
         const result = await prisma.tagOnTask.createMany({
             data: taskAssignments,
-            skipDuplicates: true,
         });
 
         res.json({

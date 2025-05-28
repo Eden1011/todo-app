@@ -366,7 +366,7 @@ const paginationValidation = [
         .withMessage("Limit must be between 1 and 100"),
 ];
 
-// Bulk delete validation
+// Bulk delete validations - FIXED: Separate validations for each entity type
 const bulkDeleteValidation = [
     body("ids")
         .isArray({ min: 1 })
@@ -374,6 +374,26 @@ const bulkDeleteValidation = [
     body("ids.*")
         .isInt({ min: 1 })
         .withMessage("Each ID must be a positive integer"),
+];
+
+// Specific bulk delete validation for categories
+const bulkDeleteCategoriesValidation = [
+    body("categoryIds")
+        .isArray({ min: 1 })
+        .withMessage("Category IDs must be a non-empty array"),
+    body("categoryIds.*")
+        .isInt({ min: 1 })
+        .withMessage("Each category ID must be a positive integer"),
+];
+
+// Specific bulk delete validation for tags
+const bulkDeleteTagsValidation = [
+    body("tagIds")
+        .isArray({ min: 1 })
+        .withMessage("Tag IDs must be a non-empty array"),
+    body("tagIds.*")
+        .isInt({ min: 1 })
+        .withMessage("Each tag ID must be a positive integer"),
 ];
 
 // Export validation
@@ -450,9 +470,14 @@ module.exports = {
     updateMemberRoleValidation,
 
     searchUserValidation,
+
     // Common validations
     paginationValidation,
-    bulkDeleteValidation,
     exportValidation,
     handleValidationErrors,
+
+    // Bulk delete validations - FIXED: Now includes specific validations
+    bulkDeleteValidation, // Generic
+    bulkDeleteCategoriesValidation, // For categories
+    bulkDeleteTagsValidation, // For tags
 };

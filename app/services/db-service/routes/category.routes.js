@@ -17,7 +17,7 @@ const {
     updateCategoryValidation,
     idParamValidation,
     paginationValidation,
-    bulkDeleteValidation,
+    bulkDeleteCategoriesValidation,
     handleValidationErrors,
 } = require("../middleware/validation");
 
@@ -50,8 +50,20 @@ router.get(
     asyncHandler(getCategories),
 );
 
+// Stats route (specific route before /:id)
 router.get("/stats", statsLimiter, asyncHandler(getCategoryStats));
 
+// IMPORTANT: Bulk operations MUST come BEFORE /:id routes
+// This fixes the route matching issue where /bulk was matched by /:id
+router.delete(
+    "/bulk",
+    bulkOperationLimiter,
+    bulkDeleteCategoriesValidation,
+    handleValidationErrors,
+    asyncHandler(bulkDeleteCategories),
+);
+
+// Parameter routes come AFTER specific routes
 router.get(
     "/:id",
     generalLimiter,
@@ -74,15 +86,6 @@ router.delete(
     idParamValidation,
     handleValidationErrors,
     asyncHandler(deleteCategory),
-);
-
-// Bulk operations
-router.delete(
-    "/bulk",
-    bulkOperationLimiter,
-    bulkDeleteValidation,
-    handleValidationErrors,
-    asyncHandler(bulkDeleteCategories),
 );
 
 module.exports = router;
