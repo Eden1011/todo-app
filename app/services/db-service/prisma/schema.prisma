@@ -22,24 +22,23 @@ model User {
 }
 
 model Task {
-  id                 Int               @id @default(autoincrement())
-  title              String
-  description        String?
-  priority           TaskPriority      @default(MEDIUM)
-  status             TaskStatus        @default(TODO)
-  dueDate            DateTime?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  ownerId            Int
-  owner              User              @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  assigneeId         Int?
-  assignee           User?             @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  projectId          Int?
-  project            Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  categories         CategoryOnTask[]
-  tags               TagOnTask[]
-  recurringPattern   RecurringPattern?
-  notifications      Notification[]
+  id            Int               @id @default(autoincrement())
+  title         String
+  description   String?
+  priority      TaskPriority      @default(MEDIUM)
+  status        TaskStatus        @default(TODO)
+  dueDate       DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  ownerId       Int
+  owner         User              @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  assigneeId    Int?
+  assignee      User?             @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  projectId     Int?
+  project       Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  categories    CategoryOnTask[]
+  tags          TagOnTask[]
+  notifications Notification[]
 
   @@index([ownerId])
   @@index([assigneeId])
@@ -81,7 +80,7 @@ model ProjectMember {
 model Category {
   id        Int              @id @default(autoincrement())
   name      String
-  color     String?          // Added color field
+  color     String?
   ownerId   Int
   owner     User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
@@ -106,7 +105,7 @@ model CategoryOnTask {
 model Tag {
   id        Int         @id @default(autoincrement())
   name      String
-  color     String?     // Added color field
+  color     String?
   ownerId   Int
   owner     User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())
@@ -144,32 +143,6 @@ model Notification {
   @@index([relatedTaskId])
 }
 
-model RecurringPattern {
-  id          Int                  @id @default(autoincrement())
-  type        RecurringType
-  interval    Int                  @default(1)
-  dayOfWeek   Int? // 0-6, where 0 is Sunday
-  dayOfMonth  Int? // 1-31
-  monthOfYear Int? // 1-12
-  endDate     DateTime?
-  taskId      Int                  @unique
-  task        Task                 @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  exceptions  RecurringException[]
-}
-
-model RecurringException {
-  id        Int              @id @default(autoincrement())
-  date      DateTime
-  patternId Int
-  pattern   RecurringPattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
-  createdAt DateTime         @default(now())
-
-  @@index([patternId])
-  @@index([date])
-}
-
 enum TaskPriority {
   LOW
   MEDIUM
@@ -198,11 +171,4 @@ enum NotificationType {
   TASK_STATUS_CHANGED
   COMMENT_ADDED
   PROJECT_INVITE
-}
-
-enum RecurringType {
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
 }

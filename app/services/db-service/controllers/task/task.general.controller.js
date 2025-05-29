@@ -240,7 +240,6 @@ async function getTaskById(req, res) {
                         tag: { select: { id: true, name: true } },
                     },
                 },
-                recurringPattern: true,
             },
         });
 

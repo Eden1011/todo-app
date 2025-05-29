@@ -13,7 +13,6 @@ const {
     exportTasksToJSON,
     exportProjectsToCSV,
     exportProjectsToJSON,
-    exportTasksToICal,
     getExportInfo,
     exportUserDataBackup,
 } = require("../controllers/export/export.controller");
@@ -38,14 +37,6 @@ router.get(
     exportValidation,
     handleValidationErrors,
     asyncHandler(exportTasksToJSON),
-);
-
-router.get(
-    "/tasks/ical",
-    exportLimiter,
-    exportValidation,
-    handleValidationErrors,
-    asyncHandler(exportTasksToICal),
 );
 
 // Project exports

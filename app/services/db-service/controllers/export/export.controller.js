@@ -357,89 +357,6 @@ async function exportProjectsToJSON(req, res) {
 }
 
 /**
- * Export tasks to iCal format (for calendar integration)
- */
-async function exportTasksToICal(req, res) {
-    try {
-        const authId = req.user.id;
-        const user = await getOrCreateUser(authId);
-
-        const { projectId, onlyWithDueDate = true } = req.query;
-
-        // Build where clause
-        const where = {
-            OR: [{ ownerId: user.id }, { assigneeId: user.id }],
-            status: { notIn: ["DONE", "CANCELED"] },
-        };
-
-        if (projectId) where.projectId = parseInt(projectId);
-        if (onlyWithDueDate === "true") {
-            where.dueDate = { not: null };
-        }
-
-        const tasks = await prisma.task.findMany({
-            where,
-            include: {
-                owner: { select: { authId: true } },
-                assignee: { select: { authId: true } },
-                project: { select: { name: true } },
-            },
-            orderBy: { dueDate: "asc" },
-        });
-
-        // Generate iCal content
-        const now = new Date();
-        const icalContent = [
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//Task Manager//Task Export//EN",
-            "CALSCALE:GREGORIAN",
-            "METHOD:PUBLISH",
-        ];
-
-        tasks.forEach((task) => {
-            const eventId = `task-${task.id}-${now.getTime()}`;
-            const dueDate = task.dueDate ? new Date(task.dueDate) : new Date();
-            const dueDateStr =
-                dueDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-
-            icalContent.push(
-                "BEGIN:VEVENT",
-                `UID:${eventId}`,
-                `DTSTART:${dueDateStr}`,
-                `DTEND:${dueDateStr}`,
-                `SUMMARY:${task.title.replace(/[,;]/g, "\\$&")}`,
-                `DESCRIPTION:${(task.description || "").replace(/[,;]/g, "\\$&")}`,
-                `STATUS:${task.status === "TODO" ? "NEEDS-ACTION" : task.status === "DONE" ? "COMPLETED" : "IN-PROCESS"}`,
-                `PRIORITY:${task.priority === "URGENT" ? 1 : task.priority === "HIGH" ? 3 : task.priority === "MEDIUM" ? 5 : 9}`,
-                task.project ? `CATEGORIES:${task.project.name}` : "",
-                `CREATED:${task.createdAt.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"}`,
-                `LAST-MODIFIED:${task.updatedAt.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"}`,
-                "END:VEVENT",
-            );
-        });
-
-        icalContent.push("END:VCALENDAR");
-
-        const icalString = icalContent
-            .filter((line) => line !== "")
-            .join("\r\n");
-
-        res.setHeader("Content-Type", "text/calendar");
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="tasks_calendar_${new Date().toISOString().split("T")[0]}.ics"`,
-        );
-        res.send(icalString);
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-}
-
-/**
  * Get export statistics and available formats
  */
 async function getExportInfo(req, res) {
@@ -480,7 +397,7 @@ async function getExportInfo(req, res) {
                     tags: tagCount,
                 },
                 supportedFormats: {
-                    tasks: ["CSV", "JSON", "iCal"],
+                    tasks: ["CSV", "JSON"],
                     projects: ["CSV", "JSON"],
                     categories: ["CSV", "JSON"],
                     tags: ["CSV", "JSON"],
@@ -496,7 +413,6 @@ async function getExportInfo(req, res) {
                         formats: {
                             CSV: "Comma-separated values for spreadsheet import",
                             JSON: "Structured data format with full details",
-                            iCal: "Calendar format for due dates and scheduling",
                         },
                     },
                     projects: {
@@ -609,7 +525,6 @@ module.exports = {
     exportTasksToJSON,
     exportProjectsToCSV,
     exportProjectsToJSON,
-    exportTasksToICal,
     getExportInfo,
     exportUserDataBackup,
 };

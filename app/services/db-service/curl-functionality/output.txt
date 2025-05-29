@@ -1,0 +1,868 @@
+[INSERT] (15:34) krzys1234@localhost:~/Studia/2Rok/2Sem/todo-app/app/services/db-service/curl-functionality> n .
+[INSERT] (15:35) krzys1234@localhost:~/Studia/2Rok/2Sem/todo-app/app/services/db-service/curl-functionality> ./script.sh eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiand0SWQiOiI0YTJlNGNmOC01ZDJlLTQwN2YtOWMyMy1mYzA4MzJhNGE3NDkiLCJpYXQiOjE3NDg0Mzg5NzksImV4cCI6MTc0ODQzOTg3OX0.Dly0vN-FHF0qAE8vwPC7ldfGj0_s1bnr8V0UAqyA1ms
+🚀 Starting DB Service COMPREHENSIVE Integration Tests
+This script tests EVERY endpoint at least once
+Base URL: http://localhost:4000
+
+=== 1. HEALTH CHECK ===
+📋 Testing public health endpoint
+🔧 GET http://localhost:4000/health
+{
+  "status": "ok",
+  "timestamp": "2025-05-28T13:35:57.639Z",
+  "service": "db-service",
+  "version": "1.0.0"
+}
+
+=== 2. USER MANAGEMENT (COMPLETE) ===
+
+
+📋 Get user activity with limit parameter
+🔧 GET http://localhost:4000/api/user/activity?limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"recentTasks":[],"recentProjects":[]}}
+
+📋 Search users with query parameter
+🔧 GET http://localhost:4000/api/user/search?query=test
+✓ Success (HTTP 200)
+{"success":true,"data":[]}
+
+📋 Search users with different query
+🔧 GET http://localhost:4000/api/user/search?query=admin
+✓ Success (HTTP 200)
+{"success":true,"data":[]}
+
+=== 3. CATEGORY MANAGEMENT (COMPLETE) ===
+Created category 1 with ID: 1
+
+Created category 2 with ID: 2
+
+Created category 3 with ID: 3
+
+📋 Get all categories (default parameters)
+🔧 GET http://localhost:4000/api/category
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":2,"name":"Personal","color":"#33FF57","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.743Z","owner":{"id":1,"authId":1}}... [truncated]
+
+📋 Get categories with pagination
+🔧 GET http://localhost:4000/api/category?page=1&limit=10
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":2,"name":"Personal","color":"#33FF57","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.743Z","owner":{"id":1,"authId":1}}... [truncated]
+
+📋 Search categories by name
+🔧 GET http://localhost:4000/api/category?search=Work
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":1,"name":"Work","color":"#FF5733","ownerId":1,"createdAt":"2025-05-28T13:35:57.728Z","updatedAt":"2025-05-28T13:35:57.728Z","owner":{"id":1,"authId":1}}],"pagination":{"page":1,"limit":50,"total":1,"totalPages":1}}}
+
+📋 Get categories sorted by name ascending
+🔧 GET http://localhost:4000/api/category?sortBy=name&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":2,"name":"Personal","color":"#33FF57","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.743Z","owner":{"id":1,"authId":1}}... [truncated]
+
+📋 Get categories sorted by creation date descending
+🔧 GET http://localhost:4000/api/category?sortBy=createdAt&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":3,"name":"Urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.758Z","updatedAt":"2025-05-28T13:35:57.758Z","owner":{"id":1,"authId":1}},{... [truncated]
+
+📋 Get categories without task count
+🔧 GET http://localhost:4000/api/category?withTaskCount=false
+✓ Success (HTTP 200)
+{"success":true,"data":{"categories":[{"id":2,"name":"Personal","color":"#33FF57","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.743Z","owner":{"id":1,"authId":1}}... [truncated]
+
+📋 Get category statistics
+🔧 GET http://localhost:4000/api/category/stats
+✓ Success (HTTP 200)
+{"success":true,"data":[{"id":1,"name":"Work","color":"#FF5733","totalTasks":0,"tasksByStatus":{}},{"id":2,"name":"Personal","color":"#33FF57","totalTasks":0,"tasksByStatus":{}},{"id":3,"name":"Urgent","color":"#FF0000","totalTasks":0,"tasksByStatus":{}}]}
+
+📋 Get specific category by ID
+🔧 GET http://localhost:4000/api/category/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"Work","color":"#FF5733","ownerId":1,"createdAt":"2025-05-28T13:35:57.728Z","updatedAt":"2025-05-28T13:35:57.728Z","owner":{"id":1,"authId":1},"tasks":[],"_count":{"tasks":0}}}
+
+📋 Get another category by ID
+🔧 GET http://localhost:4000/api/category/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"Personal","color":"#33FF57","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.743Z","owner":{"id":1,"authId":1},"tasks":[],"_count":{"tasks":0}}}
+
+📋 Update category name and color
+🔧 PUT http://localhost:4000/api/category/1
+📤 {"name":"Work Updated","color":"#FF0000"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"Work Updated","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.728Z","updatedAt":"2025-05-28T13:35:57.875Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+📋 Update category color only
+🔧 PUT http://localhost:4000/api/category/2
+📤 {"color":"#00FF00"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"Personal","color":"#00FF00","ownerId":1,"createdAt":"2025-05-28T13:35:57.743Z","updatedAt":"2025-05-28T13:35:57.892Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+📋 Update category name only
+🔧 PUT http://localhost:4000/api/category/3
+📤 {"name":"Super Urgent"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"name":"Super Urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.758Z","updatedAt":"2025-05-28T13:35:57.910Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+=== 4. TAG MANAGEMENT (COMPLETE) ===
+Created tag 1 with ID: 1
+
+Created tag 2 with ID: 2
+
+Created tag 3 with ID: 3
+
+📋 Get all tags (default parameters)
+🔧 GET http://localhost:4000/api/tag
+✓ Success (HTTP 200)
+{"success":true,"data":{"tags":[{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","owner":{"id":1,"authId":1}},{"id":3,"n... [truncated]
+
+📋 Get tags with pagination
+🔧 GET http://localhost:4000/api/tag?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"tags":[{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","owner":{"id":1,"authId":1}},{"id":3,"n... [truncated]
+
+📋 Search tags by partial name
+🔧 GET http://localhost:4000/api/tag?search=urg
+✓ Success (HTTP 200)
+{"success":true,"data":{"tags":[{"id":1,"name":"urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:57.924Z","owner":{"id":1,"authId":1}}],"pagination":{"page":1,"limit":50,"total":1,"totalPages":1}}}
+
+📋 Get tags sorted by name descending
+🔧 GET http://localhost:4000/api/tag?sortBy=name&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tags":[{"id":1,"name":"urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:57.924Z","owner":{"id":1,"authId":1}},{"id":3... [truncated]
+
+📋 Get tags with task count
+🔧 GET http://localhost:4000/api/tag?withTaskCount=true
+✓ Success (HTTP 200)
+{"success":true,"data":{"tags":[{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","owner":{"id":1,"authId":1},"_count":{"... [truncated]
+
+📋 Get tag statistics
+🔧 GET http://localhost:4000/api/tag/stats
+✓ Success (HTTP 200)
+{"success":true,"data":[{"id":1,"name":"urgent","color":"#FF0000","totalTasks":0,"tasksByStatus":{}},{"id":2,"name":"bug","color":"#FFA500","totalTasks":0,"tasksByStatus":{}},{"id":3,"name":"feature","color":"#0000FF","totalTasks":0,"tasksByStatus":{}}]}
+
+📋 Get popular tags (default limit)
+🔧 GET http://localhost:4000/api/tag/popular
+✓ Success (HTTP 200)
+{"success":true,"data":[{"id":1,"name":"urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:57.924Z","_count":{"tasks":0}},{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","_count":{"tasks":0}},{"id":3,"name":"feature","color":"#0000FF","ownerId":1,"createdAt":"2025-05-28T13:35:57.959Z","updatedAt":"2025-05-28T13:35:57.959Z","_count":{"tasks":0}}]}
+
+📋 Get popular tags with custom limit
+🔧 GET http://localhost:4000/api/tag/popular?limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":[{"id":1,"name":"urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:57.924Z","_count":{"tasks":0}},{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","_count":{"tasks":0}},{"id":3,"name":"feature","color":"#0000FF","ownerId":1,"createdAt":"2025-05-28T13:35:57.959Z","updatedAt":"2025-05-28T13:35:57.959Z","_count":{"tasks":0}}]}
+
+📋 Get specific tag by ID
+🔧 GET http://localhost:4000/api/tag/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"urgent","color":"#FF0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:57.924Z","owner":{"id":1,"authId":1},"tasks":[],"_count":{"tasks":0}}}
+
+📋 Get another tag by ID
+🔧 GET http://localhost:4000/api/tag/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"bug","color":"#FFA500","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:57.941Z","owner":{"id":1,"authId":1},"tasks":[],"_count":{"tasks":0}}}
+
+📋 Update tag name and color
+🔧 PUT http://localhost:4000/api/tag/1
+📤 {"name":"very-urgent","color":"#CC0000"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"very-urgent","color":"#CC0000","ownerId":1,"createdAt":"2025-05-28T13:35:57.924Z","updatedAt":"2025-05-28T13:35:58.136Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+📋 Update tag color only
+🔧 PUT http://localhost:4000/api/tag/2
+📤 {"color":"#FF8000"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"bug","color":"#FF8000","ownerId":1,"createdAt":"2025-05-28T13:35:57.941Z","updatedAt":"2025-05-28T13:35:58.148Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+📋 Update tag name only
+🔧 PUT http://localhost:4000/api/tag/3
+📤 {"name":"new-feature"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"name":"new-feature","color":"#0000FF","ownerId":1,"createdAt":"2025-05-28T13:35:57.959Z","updatedAt":"2025-05-28T13:35:58.161Z","owner":{"id":1,"authId":1},"_count":{"tasks":0}}}
+
+=== 5. PROJECT MANAGEMENT (COMPLETE) ===
+Created project 1 with ID: 1
+
+Created project 2 with ID: 2
+
+📋 Get all projects (default parameters)
+🔧 GET http://localhost:4000/api/project
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Get projects with pagination
+🔧 GET http://localhost:4000/api/project?page=1&limit=10
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Search projects by name
+🔧 GET http://localhost:4000/api/project?search=Test
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Get only owned projects
+🔧 GET http://localhost:4000/api/project?ownedOnly=true
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Get projects sorted by name
+🔧 GET http://localhost:4000/api/project?sortBy=name&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Get projects sorted by update date
+🔧 GET http://localhost:4000/api/project?sortBy=updatedAt&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"projects":[{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.1... [truncated]
+
+📋 Get specific project by ID
+🔧 GET http://localhost:4000/api/project/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"Test Project","description":"A test project for integration testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.174Z","updatedAt":"2025-05-28T13:35:58.174Z","owner":{"id":1,"authId":1},"members":[{"id":1,"projectId":1,"userId":1,"role":"OWNER","createdAt":"2025-05-28T13:35:58.174Z","updatedAt":"2025-05-28T13:35:58.174Z","user":{"id":1,"authId":1}}],"tasks":[],"_count":{"tasks":0,"members":1}}}
+
+📋 Get another project by ID
+🔧 GET http://localhost:4000/api/project/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"Secondary Project","description":"Another project for testing","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.188Z","owner":{"id":1,"authId":1},"members":[{"id":2,"projectId":2,"userId":1,"role":"OWNER","createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.188Z","user":{"id":1,"authId":1}}],"tasks":[],"_count":{"tasks":0,"members":1}}}
+
+📋 Update project name and description
+🔧 PUT http://localhost:4000/api/project/1
+📤 {"name":"Updated Test Project","description":"Updated description"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"name":"Updated Test Project","description":"Updated description","ownerId":1,"createdAt":"2025-05-28T13:35:58.174Z","updatedAt":"2025-05-28T13:35:58.384Z","owner":{"id":1,"authId":1},"members":[{"id":1,"projectId":1,"userId":1,"role":"OWNER","createdAt":"2025-05-28T13:35:58.174Z","updatedAt":"2025-05-28T13:35:58.174Z","user":{"id":1,"authId":1}}],"_count":{"tasks":0,"members":1}}}
+
+📋 Update project description only
+🔧 PUT http://localhost:4000/api/project/2
+📤 {"description":"Updated secondary description"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"name":"Secondary Project","description":"Updated secondary description","ownerId":1,"createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.420Z","owner":{"id":1,"authId":1},"members":[{"id":2,"projectId":2,"userId":1,"role":"OWNER","createdAt":"2025-05-28T13:35:58.188Z","updatedAt":"2025-05-28T13:35:58.188Z","user":{"id":1,"authId":1}}],"_count":{"tasks":0,"members":1}}}
+
+Note: Member management tests may fail if auth ID doesn't exist
+📋 Add member to project (may fail if user doesn't exist)
+🔧 POST http://localhost:4000/api/project/1/members
+📤 {"memberAuthId":999,"role":"MEMBER"}
+✓ Success (HTTP 201)
+{"success":true,"data":{"id":3,"projectId":1,"userId":2,"role":"MEMBER","createdAt":"2025-05-28T13:35:58.481Z","updatedAt":"2025-05-28T13:35:58.481Z","user":{"id":2,"authId":999},"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Add viewer to project (may fail if user doesn't exist)
+🔧 POST http://localhost:4000/api/project/2/members
+📤 {"memberAuthId":998,"role":"VIEWER"}
+✓ Success (HTTP 201)
+{"success":true,"data":{"id":4,"projectId":2,"userId":3,"role":"VIEWER","createdAt":"2025-05-28T13:35:58.541Z","updatedAt":"2025-05-28T13:35:58.541Z","user":{"id":3,"authId":998},"project":{"id":2,"name":"Secondary Project"}}}
+
+=== 6. TASK MANAGEMENT - BASIC OPERATIONS (COMPLETE) ===
+Created task 1 with ID: 1
+
+Created task 2 with ID: 2
+
+Created task 3 with ID: 3
+
+Created task 4 with ID: 4
+
+📋 Get all tasks (default parameters)
+🔧 GET http://localhost:4000/api/task
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"LOW","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-... [truncated]
+
+📋 Get tasks with pagination
+🔧 GET http://localhost:4000/api/task?page=1&limit=10
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"LOW","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-... [truncated]
+
+📋 Filter tasks by TODO status
+🔧 GET http://localhost:4000/api/task?status=TODO
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"LOW","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-... [truncated]
+
+📋 Filter tasks by IN_PROGRESS status
+🔧 GET http://localhost:4000/api/task?status=IN_PROGRESS
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Filter tasks by HIGH priority
+🔧 GET http://localhost:4000/api/task?priority=HIGH
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":1,"title":"Complete project documentation","description":"Write comprehensive documentation for the project","priority":"HIGH","status":"TODO","dueDate":"2025-06... [truncated]
+
+📋 Filter tasks by URGENT priority
+🔧 GET http://localhost:4000/api/task?priority=URGENT
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Filter tasks by project ID
+🔧 GET http://localhost:4000/api/task?projectId=1
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Get non-assigned tasks
+🔧 GET http://localhost:4000/api/task?assignedToMe=false
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"LOW","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-... [truncated]
+
+📋 Search tasks by title/description
+🔧 GET http://localhost:4000/api/task?search=documentation
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":1,"title":"Complete project documentation","description":"Write comprehensive documentation for the project","priority":"HIGH","status":"TODO","dueDate":"2025-06... [truncated]
+
+📋 Search tasks for bug keyword
+🔧 GET http://localhost:4000/api/task?search=bug
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Sort tasks by title ascending
+🔧 GET http://localhost:4000/api/task?sortBy=title&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":1,"title":"Complete project documentation","description":"Write comprehensive documentation for the project","priority":"HIGH","status":"TODO","dueDate":"2025-06... [truncated]
+
+📋 Sort tasks by priority descending
+🔧 GET http://localhost:4000/api/task?sortBy=priority&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Sort tasks by due date ascending
+🔧 GET http://localhost:4000/api/task?sortBy=dueDate&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:5... [truncated]
+
+📋 Filter tasks by category
+🔧 GET http://localhost:4000/api/task?categoryId=1
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Filter tasks by tag
+🔧 GET http://localhost:4000/api/task?tagId=1
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Filter tasks by date range
+🔧 GET http://localhost:4000/api/task?dueDateFrom=2025-05-01&dueDateTo=2025-06-30
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.0... [truncated]
+
+📋 Complex filtering with multiple parameters
+🔧 GET http://localhost:4000/api/task?status=TODO&priority=HIGH&page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":1,"title":"Complete project documentation","description":"Write comprehensive documentation for the project","priority":"HIGH","status":"TODO","dueDate":"2025-06... [truncated]
+
+📋 Get specific task by ID
+🔧 GET http://localhost:4000/api/task/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation","description":"Write comprehensive documentation for the project","priority":"HIGH","status":"TODO","dueDate":"2025-06-01T10:00:... [truncated]
+
+📋 Get another task by ID
+🔧 GET http://localhost:4000/api/task/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the bug in the authentication system","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.000Z","crea... [truncated]
+
+📋 Get third task by ID
+🔧 GET http://localhost:4000/api/task/3
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:35:58.740Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null,"categories":[],"tags":[]}}
+
+📋 Get fourth task by ID
+🔧 GET http://localhost:4000/api/task/4
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":4,"title":"Update user interface","description":null,"priority":"LOW","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-28T13:35:5... [truncated]
+
+📋 Update task title and priority
+🔧 PUT http://localhost:4000/api/task/1
+📤 {"title":"Complete project documentation - Updated","priority":"URGENT"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","status":"TODO","dueDate":"2025-... [truncated]
+
+📋 Update task description only
+🔧 PUT http://localhost:4000/api/task/2
+📤 {"description":"Fix the critical authentication bug - updated description"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:... [truncated]
+
+📋 Update task status and add due date
+🔧 PUT http://localhost:4000/api/task/3
+📤 {"status":"IN_PROGRESS","dueDate":"2025-05-29T14:00:00.000Z"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"IN_PROGRESS","dueDate":"2025-05-29T14:00:00.000Z","createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:35:59.552Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null,"categories":[],"tags":[]}}
+
+📋 Update task priority and change project
+🔧 PUT http://localhost:4000/api/task/4
+📤 {"priority":"MEDIUM","projectId":1}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":4,"title":"Update user interface","description":null,"priority":"MEDIUM","status":"TODO","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-28T13:3... [truncated]
+
+📋 Unassign task (set assignee to null)
+🔧 POST http://localhost:4000/api/task/1/assign
+📤 {"assigneeAuthId":null}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","status":"TODO","dueDate":"2025-06-01T10:00:00.000Z","createdAt":"2025-05-28T13:35:58.609Z","updatedAt":"2025-05-28T13:35:59.656Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Assign task without specific assignee
+🔧 POST http://localhost:4000/api/task/2/assign
+📤 {}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-30T15:00:00.000Z","createdAt":"2025-05-28T13:35:58.678Z","updatedAt":"2025-05-28T13:35:59.708Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+=== 7. TASK STATUS MANAGEMENT (COMPLETE) ===
+📋 Update task 1 status to IN_PROGRESS
+🔧 PUT http://localhost:4000/api/task/1/status
+📤 {"status":"IN_PROGRESS"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-06-01T10:00:00.000Z","createdAt":"2025-05-28T13:35:58.609Z","updatedAt":"2025-05-28T13:35:59.763Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 2 status to REVIEW
+🔧 PUT http://localhost:4000/api/task/2/status
+📤 {"status":"REVIEW"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"URGENT","status":"REVIEW","dueDate":"2025-05-30T15:00:00.000Z","createdAt":"2025-05-28T13:35:58.678Z","updatedAt":"2025-05-28T13:35:59.816Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 3 status to DONE
+🔧 PUT http://localhost:4000/api/task/3/status
+📤 {"status":"DONE"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE","dueDate":"2025-05-29T14:00:00.000Z","createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:35:59.867Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null}}
+
+📋 Update task 4 status to CANCELED
+🔧 PUT http://localhost:4000/api/task/4/status
+📤 {"status":"CANCELED"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":4,"title":"Update user interface","description":null,"priority":"MEDIUM","status":"CANCELED","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-28T13:35:59.915Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Get task 1 status history
+🔧 GET http://localhost:4000/api/task/1/status/history
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":1,"currentStatus":"IN_PROGRESS","createdAt":"2025-05-28T13:35:58.609Z","lastUpdated":"2025-05-28T13:35:59.763Z","history":[{"status":"TODO","timestamp":"2025-05-28T13:35:58.609Z","note":"Task created"},{"status":"IN_PROGRESS","timestamp":"2025-05-28T13:35:59.763Z","note":"Current status"}]}}
+
+📋 Get task 2 status history
+🔧 GET http://localhost:4000/api/task/2/status/history
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":2,"currentStatus":"REVIEW","createdAt":"2025-05-28T13:35:58.678Z","lastUpdated":"2025-05-28T13:35:59.816Z","history":[{"status":"TODO","timestamp":"2025-05-28T13:35:58.678Z","note":"Task created"},{"status":"REVIEW","timestamp":"2025-05-28T13:35:59.816Z","note":"Current status"}]}}
+
+📋 Get all TODO tasks
+🔧 GET http://localhost:4000/api/task/status/TODO
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"TODO","tasks":[],"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get all IN_PROGRESS tasks
+🔧 GET http://localhost:4000/api/task/status/IN_PROGRESS
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"IN_PROGRESS","tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT"... [truncated]
+
+📋 Get all REVIEW tasks
+🔧 GET http://localhost:4000/api/task/status/REVIEW
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"REVIEW","tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"URGENT","status":"REVIEW","d... [truncated]
+
+📋 Get all DONE tasks
+🔧 GET http://localhost:4000/api/task/status/DONE
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"DONE","tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE","dueDate":"2025-05-29T14:00:00.000Z","createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:35:59.867Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null}],"pagination":{"page":1,"limit":20,"total":1,"totalPages":1}}}
+
+📋 Get all CANCELED tasks
+🔧 GET http://localhost:4000/api/task/status/CANCELED
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"CANCELED","tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"MEDIUM","status":"CANCELED","dueDate":null,"createdAt":"2025-05-28T13:35:58.800Z","updatedAt":"2025-05-28T13:35:59.915Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}],"pagination":{"page":1,"limit":20,"total":1,"totalPages":1}}}
+
+📋 Get TODO tasks with pagination
+🔧 GET http://localhost:4000/api/task/status/TODO?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"TODO","tasks":[],"pagination":{"page":1,"limit":5,"total":0,"totalPages":0}}}
+
+📋 Get IN_PROGRESS tasks sorted by due date
+🔧 GET http://localhost:4000/api/task/status/IN_PROGRESS?sortBy=dueDate&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"status":"IN_PROGRESS","tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT"... [truncated]
+
+📋 Get task status statistics
+🔧 GET http://localhost:4000/api/task/statistics/status
+✓ Success (HTTP 200)
+{"success":true,"data":{"byStatus":{"TODO":0,"IN_PROGRESS":1,"REVIEW":1,"DONE":1,"CANCELED":1},"total":4,"completion":{"completed":1,"inProgress":2,"pending":0,"canceled":1,"completionRate":"25.00"}}}
+
+=== 8. TASK PRIORITY MANAGEMENT (COMPLETE) ===
+📋 Update task 1 priority to URGENT
+🔧 PUT http://localhost:4000/api/task/1/priority
+📤 {"priority":"URGENT"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-06-01T10:00:00.000Z","createdAt":"2025-05-28T13:35:58.609Z","updatedAt":"2025-05-28T13:36:00.255Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 2 priority to HIGH
+🔧 PUT http://localhost:4000/api/task/2/priority
+📤 {"priority":"HIGH"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"REVIEW","dueDate":"2025-05-30T15:00:00.000Z","createdAt":"2025-05-28T13:35:58.678Z","updatedAt":"2025-05-28T13:36:00.297Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 3 priority to MEDIUM
+🔧 PUT http://localhost:4000/api/task/3/priority
+📤 {"priority":"MEDIUM"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE","dueDate":"2025-05-29T14:00:00.000Z","createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:36:00.335Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null}}
+
+📋 Get all LOW priority tasks
+🔧 GET http://localhost:4000/api/task/priority/LOW
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"LOW","tasks":[],"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get all MEDIUM priority tasks
+🔧 GET http://localhost:4000/api/task/priority/MEDIUM
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"MEDIUM","tasks":[{"id":4,"title":"Update user interface","description":null,"priority":"MEDIUM","status":"CANCELED","dueDate":null,"createdAt":"2025-05-28T13:35:58.... [truncated]
+
+📋 Get all HIGH priority tasks
+🔧 GET http://localhost:4000/api/task/priority/HIGH
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"HIGH","tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"REVIEW","due... [truncated]
+
+📋 Get all URGENT priority tasks
+🔧 GET http://localhost:4000/api/task/priority/URGENT
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"URGENT","tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","s... [truncated]
+
+📋 Get URGENT tasks with pagination
+🔧 GET http://localhost:4000/api/task/priority/URGENT?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"URGENT","tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","s... [truncated]
+
+📋 Get HIGH priority tasks with REVIEW status
+🔧 GET http://localhost:4000/api/task/priority/HIGH?status=REVIEW
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"HIGH","tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"REVIEW","due... [truncated]
+
+📋 Get MEDIUM priority tasks sorted by due date
+🔧 GET http://localhost:4000/api/task/priority/MEDIUM?sortBy=dueDate&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"priority":"MEDIUM","tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE","dueDate":"2025-05-29T14:0... [truncated]
+
+📋 Get task priority statistics
+🔧 GET http://localhost:4000/api/task/statistics/priority
+✓ Success (HTTP 200)
+{"success":true,"data":{"byPriority":{"LOW":0,"MEDIUM":2,"HIGH":1,"URGENT":1},"total":4,"urgentTasksDueSoon":1,"distribution":{"urgent":"25.00","high":"25.00","medium":"50.00","low":"0.00"}}}
+
+📋 Get high priority overdue tasks
+🔧 GET http://localhost:4000/api/task/priority/high/overdue
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[],"count":0,"message":"No high priority overdue tasks"}}
+
+=== 9. TASK DUE DATE MANAGEMENT (COMPLETE) ===
+📋 Update task 1 due date
+🔧 PUT http://localhost:4000/api/task/1/due-date
+📤 {"dueDate":"2025-05-29T10:00:00.000Z"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for the project","priority":"URGENT","status":"IN_PROGRESS","dueDate":"2025-05-29T10:00:00.000Z","createdAt":"2025-05-28T13:35:58.609Z","updatedAt":"2025-05-28T13:36:00.646Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 2 due date
+🔧 PUT http://localhost:4000/api/task/2/due-date
+📤 {"dueDate":"2025-05-28T16:00:00.000Z"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"REVIEW","dueDate":"2025-05-28T16:00:00.000Z","createdAt":"2025-05-28T13:35:58.678Z","updatedAt":"2025-05-28T13:36:00.686Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}}
+
+📋 Update task 3 due date
+🔧 PUT http://localhost:4000/api/task/3/due-date
+📤 {"dueDate":"2025-06-15T12:00:00.000Z"}
+✓ Success (HTTP 200)
+{"success":true,"data":{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE","dueDate":"2025-06-15T12:00:00.000Z","createdAt":"2025-05-28T13:35:58.740Z","updatedAt":"2025-05-28T13:36:00.731Z","ownerId":1,"assigneeId":null,"projectId":null,"owner":{"id":1,"authId":1},"assignee":null,"project":null}}
+
+📋 Get tasks due soon (default 7 days)
+🔧 GET http://localhost:4000/api/task/due/soon
+✓ Success (HTTP 200)
+{"success":true,"data":{"categorized":{"overdue":[],"today":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"RE... [truncated]
+
+📋 Get tasks due within 3 days
+🔧 GET http://localhost:4000/api/task/due/soon?days=3
+✓ Success (HTTP 200)
+{"success":true,"data":{"categorized":{"overdue":[],"today":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"RE... [truncated]
+
+📋 Get tasks due within 14 days with pagination
+🔧 GET http://localhost:4000/api/task/due/soon?days=14&page=1&limit=10
+✓ Success (HTTP 200)
+{"success":true,"data":{"categorized":{"overdue":[],"today":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"RE... [truncated]
+
+📋 Get tasks due soon excluding overdue
+🔧 GET http://localhost:4000/api/task/due/soon?includeOverdue=false
+✓ Success (HTTP 200)
+{"success":true,"data":{"categorized":{"overdue":[],"today":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"RE... [truncated]
+
+📋 Get tasks due soon including overdue
+🔧 GET http://localhost:4000/api/task/due/soon?includeOverdue=true
+✓ Success (HTTP 200)
+{"success":true,"data":{"categorized":{"overdue":[],"today":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"RE... [truncated]
+
+📋 Get overdue tasks (default parameters)
+🔧 GET http://localhost:4000/api/task/due/overdue
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[],"count":0,"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get overdue tasks with pagination
+🔧 GET http://localhost:4000/api/task/due/overdue?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[],"count":0,"pagination":{"page":1,"limit":5,"total":0,"totalPages":0}}}
+
+📋 Get overdue tasks sorted by due date
+🔧 GET http://localhost:4000/api/task/due/overdue?sortBy=dueDate&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[],"count":0,"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get overdue tasks sorted by priority
+🔧 GET http://localhost:4000/api/task/due/overdue?sortBy=priority&sortOrder=desc
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[],"count":0,"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get tasks due today
+🔧 GET http://localhost:4000/api/task/due/today
+✓ Success (HTTP 200)
+{"success":true,"data":{"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description","priority":"HIGH","status":"REVIEW","dueDate":"2025-05-28T16:00:00.000Z","createdAt":"2025-05-28T13:35:58.678Z","updatedAt":"2025-05-28T13:36:00.686Z","ownerId":1,"assigneeId":null,"projectId":1,"owner":{"id":1,"authId":1},"assignee":null,"project":{"id":1,"name":"Updated Test Project"}}],"count":1,"message":"You have 1 tasks due today"}}
+
+📋 Send due date reminders
+🔧 POST http://localhost:4000/api/task/due/reminders
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Sent 2 due date reminders","remindersSent":2,"tasksDueSoon":2}}
+
+📋 Get due date statistics
+🔧 GET http://localhost:4000/api/task/statistics/due-dates
+✓ Success (HTTP 200)
+{"success":true,"data":{"total":2,"withDueDate":2,"withoutDueDate":0,"overdue":0,"dueToday":2,"dueTomorrow":0,"dueThisWeek":0,"percentages":{"withDueDate":"100.00","overdue":"0.00"}}}
+
+=== 10. TASK CATEGORY RELATIONSHIPS (COMPLETE) ===
+📋 Add Personal category to task 1
+🔧 POST http://localhost:4000/api/task/1/categories
+📤 {"categoryId":2}
+✓ Success (HTTP 201)
+{"success":true,"data":{"categoryId":2,"taskId":1,"assignedAt":"2025-05-28T13:36:01.212Z","category":{"id":2,"name":"Personal","color":"#00FF00"},"task":{"id":1,"title":"Complete project documentation - Updated"}}}
+
+📋 Add Work category to task 3
+🔧 POST http://localhost:4000/api/task/3/categories
+📤 {"categoryId":1}
+✓ Success (HTTP 201)
+{"success":true,"data":{"categoryId":1,"taskId":3,"assignedAt":"2025-05-28T13:36:01.259Z","category":{"id":1,"name":"Work Updated","color":"#FF0000"},"task":{"id":3,"title":"Review code changes"}}}
+
+📋 Add Urgent category to task 3
+🔧 POST http://localhost:4000/api/task/3/categories
+📤 {"categoryId":3}
+✓ Success (HTTP 201)
+{"success":true,"data":{"categoryId":3,"taskId":3,"assignedAt":"2025-05-28T13:36:01.309Z","category":{"id":3,"name":"Super Urgent","color":"#FF0000"},"task":{"id":3,"title":"Review code changes"}}}
+
+📋 Get all categories for task 1
+🔧 GET http://localhost:4000/api/task/1/categories
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":1,"categories":[{"id":1,"name":"Work Updated","color":"#FF0000","ownerId":1,"assignedAt":"2025-05-28T13:35:58.609Z"},{"id":2,"name":"Personal","color":"#00FF00","ownerId":1,"assignedAt":"2025-05-28T13:36:01.212Z"}]}}
+
+📋 Get all categories for task 2
+🔧 GET http://localhost:4000/api/task/2/categories
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":2,"categories":[{"id":1,"name":"Work Updated","color":"#FF0000","ownerId":1,"assignedAt":"2025-05-28T13:35:58.678Z"}]}}
+
+📋 Get all categories for task 3
+🔧 GET http://localhost:4000/api/task/3/categories
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":3,"categories":[{"id":1,"name":"Work Updated","color":"#FF0000","ownerId":1,"assignedAt":"2025-05-28T13:36:01.259Z"},{"id":3,"name":"Super Urgent","color":"#FF0000","ownerId":1,"assignedAt":"2025-05-28T13:36:01.309Z"}]}}
+
+📋 Get all tasks for Work category
+🔧 GET http://localhost:4000/api/task/categories/1/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":1,"name":"Work Updated","color":"#FF0000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","s... [truncated]
+
+📋 Get all tasks for Personal category
+🔧 GET http://localhost:4000/api/task/categories/2/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":2,"name":"Personal","color":"#00FF00"},"tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for... [truncated]
+
+📋 Get all tasks for Urgent category
+🔧 GET http://localhost:4000/api/task/categories/3/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":3,"name":"Super Urgent","color":"#FF0000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","s... [truncated]
+
+📋 Get category tasks with pagination
+🔧 GET http://localhost:4000/api/task/categories/1/tasks?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":1,"name":"Work Updated","color":"#FF0000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","s... [truncated]
+
+📋 Get category tasks filtered by status
+🔧 GET http://localhost:4000/api/task/categories/1/tasks?status=TODO
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":1,"name":"Work Updated","color":"#FF0000"},"tasks":[],"pagination":{"page":1,"limit":20,"total":0,"totalPages":0}}}
+
+📋 Get category tasks filtered by priority
+🔧 GET http://localhost:4000/api/task/categories/1/tasks?priority=HIGH
+✓ Success (HTTP 200)
+{"success":true,"data":{"category":{"id":1,"name":"Work Updated","color":"#FF0000"},"tasks":[{"id":2,"title":"Fix critical bug","description":"Fix the critical authentication bug - updated description... [truncated]
+
+📋 Remove Urgent category from task 3
+🔧 DELETE http://localhost:4000/api/task/3/categories/3
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Category removed from task successfully"}}
+
+=== 11. TASK TAG RELATIONSHIPS (COMPLETE) ===
+📋 Add feature tag to task 1
+🔧 POST http://localhost:4000/api/task/1/tags
+📤 {"tagId":3}
+✓ Success (HTTP 201)
+{"success":true,"data":{"tagId":3,"taskId":1,"assignedAt":"2025-05-28T13:36:01.792Z","tag":{"id":3,"name":"new-feature","color":"#0000FF"},"task":{"id":1,"title":"Complete project documentation - Updated"}}}
+
+📋 Add urgent tag to task 3
+🔧 POST http://localhost:4000/api/task/3/tags
+📤 {"tagId":1}
+✓ Success (HTTP 201)
+{"success":true,"data":{"tagId":1,"taskId":3,"assignedAt":"2025-05-28T13:36:01.833Z","tag":{"id":1,"name":"very-urgent","color":"#CC0000"},"task":{"id":3,"title":"Review code changes"}}}
+
+📋 Add bug tag to task 3
+🔧 POST http://localhost:4000/api/task/3/tags
+📤 {"tagId":2}
+✓ Success (HTTP 201)
+{"success":true,"data":{"tagId":2,"taskId":3,"assignedAt":"2025-05-28T13:36:01.858Z","tag":{"id":2,"name":"bug","color":"#FF8000"},"task":{"id":3,"title":"Review code changes"}}}
+
+📋 Get all tags for task 1
+🔧 GET http://localhost:4000/api/task/1/tags
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":1,"tags":[{"id":1,"name":"very-urgent","color":"#CC0000","ownerId":1,"assignedAt":"2025-05-28T13:35:58.609Z"},{"id":3,"name":"new-feature","color":"#0000FF","ownerId":1,"assignedAt":"2025-05-28T13:36:01.792Z"}]}}
+
+📋 Get all tags for task 2
+🔧 GET http://localhost:4000/api/task/2/tags
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":2,"tags":[{"id":2,"name":"bug","color":"#FF8000","ownerId":1,"assignedAt":"2025-05-28T13:35:58.678Z"},{"id":1,"name":"very-urgent","color":"#CC0000","ownerId":1,"assignedAt":"2025-05-28T13:35:58.678Z"}]}}
+
+📋 Get all tags for task 3
+🔧 GET http://localhost:4000/api/task/3/tags
+✓ Success (HTTP 200)
+{"success":true,"data":{"taskId":3,"tags":[{"id":1,"name":"very-urgent","color":"#CC0000","ownerId":1,"assignedAt":"2025-05-28T13:36:01.833Z"},{"id":2,"name":"bug","color":"#FF8000","ownerId":1,"assignedAt":"2025-05-28T13:36:01.858Z"}]}}
+
+📋 Get all tasks for urgent tag
+🔧 GET http://localhost:4000/api/task/tags/1/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":1,"name":"very-urgent","color":"#CC0000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status"... [truncated]
+
+📋 Get all tasks for bug tag
+🔧 GET http://localhost:4000/api/task/tags/2/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":2,"name":"bug","color":"#FF8000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status":"DONE",... [truncated]
+
+📋 Get all tasks for feature tag
+🔧 GET http://localhost:4000/api/task/tags/3/tasks
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":3,"name":"new-feature","color":"#0000FF"},"tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for t... [truncated]
+
+📋 Get tag tasks with pagination
+🔧 GET http://localhost:4000/api/task/tags/1/tasks?page=1&limit=3
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":1,"name":"very-urgent","color":"#CC0000"},"tasks":[{"id":3,"title":"Review code changes","description":"Review the latest pull request","priority":"MEDIUM","status"... [truncated]
+
+📋 Get tag tasks filtered by status
+🔧 GET http://localhost:4000/api/task/tags/1/tasks?status=IN_PROGRESS
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":1,"name":"very-urgent","color":"#CC0000"},"tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for t... [truncated]
+
+📋 Get tag tasks filtered by priority
+🔧 GET http://localhost:4000/api/task/tags/1/tasks?priority=URGENT
+✓ Success (HTTP 200)
+{"success":true,"data":{"tag":{"id":1,"name":"very-urgent","color":"#CC0000"},"tasks":[{"id":1,"title":"Complete project documentation - Updated","description":"Write comprehensive documentation for t... [truncated]
+
+📋 Get popular tag combinations (default limit)
+🔧 GET http://localhost:4000/api/task/tags/combinations/popular
+✓ Success (HTTP 200)
+{"success":true,"data":{"popularCombinations":[{"combination":"bug + very-urgent","count":2,"tags":["bug","very-urgent"]},{"combination":"new-feature + very-urgent","count":1,"tags":["new-feature","very-urgent"]}],"totalUniqueCombinations":2}}
+
+📋 Get popular tag combinations with custom limit
+🔧 GET http://localhost:4000/api/task/tags/combinations/popular?limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"popularCombinations":[{"combination":"bug + very-urgent","count":2,"tags":["bug","very-urgent"]},{"combination":"new-feature + very-urgent","count":1,"tags":["new-feature","very-urgent"]}],"totalUniqueCombinations":2}}
+
+📋 Remove bug tag from task 3
+🔧 DELETE http://localhost:4000/api/task/3/tags/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Tag removed from task successfully"}}
+
+=== 12. NOTIFICATION MANAGEMENT (COMPLETE) ===
+📋 Get all notifications (default parameters)
+🔧 GET http://localhost:4000/api/notification
+✓ Success (HTTP 200)
+{"success":true,"data":{"notifications":[{"id":2,"type":"DUE_DATE_REMINDER","content":"Task \"Fix critical bug\" is due soon","isRead":false,"userId":1,"relatedTaskId":2,"createdAt":"2025-05-28T13:36:... [truncated]
+
+📋 Get notifications with pagination
+🔧 GET http://localhost:4000/api/notification?page=1&limit=5
+✓ Success (HTTP 200)
+{"success":true,"data":{"notifications":[{"id":2,"type":"DUE_DATE_REMINDER","content":"Task \"Fix critical bug\" is due soon","isRead":false,"userId":1,"relatedTaskId":2,"createdAt":"2025-05-28T13:36:... [truncated]
+
+📋 Get only unread notifications
+🔧 GET http://localhost:4000/api/notification?unreadOnly=true
+✓ Success (HTTP 200)
+{"success":true,"data":{"notifications":[{"id":2,"type":"DUE_DATE_REMINDER","content":"Task \"Fix critical bug\" is due soon","isRead":false,"userId":1,"relatedTaskId":2,"createdAt":"2025-05-28T13:36:... [truncated]
+
+📋 Get all notifications (read and unread)
+🔧 GET http://localhost:4000/api/notification?unreadOnly=false
+✓ Success (HTTP 200)
+{"success":true,"data":{"notifications":[{"id":2,"type":"DUE_DATE_REMINDER","content":"Task \"Fix critical bug\" is due soon","isRead":false,"userId":1,"relatedTaskId":2,"createdAt":"2025-05-28T13:36:... [truncated]
+
+📋 Get notifications sorted by creation date ascending
+🔧 GET http://localhost:4000/api/notification?sortBy=createdAt&sortOrder=asc
+✓ Success (HTTP 200)
+{"success":true,"data":{"notifications":[{"id":1,"type":"DUE_DATE_REMINDER","content":"Task \"Complete project documentation - Updated\" is due soon","isRead":false,"userId":1,"relatedTaskId":1,"creat... [truncated]
+
+📋 Get notification statistics
+🔧 GET http://localhost:4000/api/notification/stats
+✓ Success (HTTP 200)
+{"success":true,"data":{"totalCount":2,"unreadCount":2,"readCount":0,"byType":{"DUE_DATE_REMINDER":2}}}
+
+📋 Mark all notifications as read
+🔧 PUT http://localhost:4000/api/notification/read/all
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"2 notifications marked as read"}}
+
+📋 Delete all read notifications
+🔧 DELETE http://localhost:4000/api/notification/read/all
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"2 read notifications deleted"}}
+
+=== 15. CLEANUP (TESTING DELETE OPERATIONS) ===
+Testing delete operations by cleaning up created resources...
+📋 Delete task 1
+🔧 DELETE http://localhost:4000/api/task/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Task deleted successfully"}}
+📋 Delete task 2
+🔧 DELETE http://localhost:4000/api/task/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Task deleted successfully"}}
+📋 Delete task 3
+🔧 DELETE http://localhost:4000/api/task/3
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Task deleted successfully"}}
+📋 Delete task 4
+🔧 DELETE http://localhost:4000/api/task/4
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Task deleted successfully"}}
+📋 Delete project 1
+🔧 DELETE http://localhost:4000/api/project/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Project deleted successfully"}}
+📋 Delete project 2
+🔧 DELETE http://localhost:4000/api/project/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Project deleted successfully"}}
+📋 Delete Work category
+🔧 DELETE http://localhost:4000/api/category/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Category deleted successfully"}}
+📋 Delete Personal category
+🔧 DELETE http://localhost:4000/api/category/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Category deleted successfully"}}
+📋 Delete Urgent category
+🔧 DELETE http://localhost:4000/api/category/3
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Category deleted successfully"}}
+📋 Delete urgent tag
+🔧 DELETE http://localhost:4000/api/tag/1
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Tag deleted successfully"}}
+📋 Delete bug tag
+🔧 DELETE http://localhost:4000/api/tag/2
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Tag deleted successfully"}}
+📋 Delete feature tag
+🔧 DELETE http://localhost:4000/api/tag/3
+✓ Success (HTTP 200)
+{"success":true,"data":{"message":"Tag deleted successfully"}}
+
+=== 🎉 COMPREHENSIVE TEST SUMMARY ===
+✅ ALL ENDPOINTS TESTED - 70+ individual endpoints
+🎯 PARAMETER VARIATIONS - 100+ different parameter combinations
+⚠️  ERROR HANDLING - 15+ error scenarios tested
+🔍 FILTERING - Comprehensive filter and search testing
+📊 STATISTICS - All statistics endpoints covered
+🔗 RELATIONSHIPS - All entity relationships tested
+
+✨ COMPREHENSIVE TEST COMPLETED SUCCESSFULLY! ✨
+Every single endpoint has been tested at least once with various parameters!
+[INSERT] (15:36) krzys1234@localhost:~/Studia/2Rok/2Sem/todo-app/app/services/db-service/curl-functionality>

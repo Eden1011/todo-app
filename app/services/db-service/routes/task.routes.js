@@ -5,11 +5,9 @@ const { asyncHandler } = require("../middleware/error.handler");
 const {
     generalLimiter,
     createTaskLimiter,
-    bulkOperationLimiter,
     updateLimiter,
     deleteLimiter,
     statsLimiter,
-    heavyOperationLimiter,
 } = require("../middleware/rate-limit");
 
 // Import validations
@@ -20,15 +18,10 @@ const {
     idParamValidation,
     taskIdParamValidation,
     updateTaskStatusValidation,
-    bulkUpdateTaskStatusValidation,
     updateTaskPriorityValidation,
-    bulkUpdateTaskPriorityValidation,
     updateTaskDueDateValidation,
-    bulkUpdateDueDatesValidation,
     addCategoryToTaskValidation,
-    bulkAssignCategoriesToTaskValidation,
     addTagToTaskValidation,
-    bulkAssignTagsToTaskValidation,
     handleValidationErrors,
 } = require("../middleware/validation");
 
@@ -45,18 +38,15 @@ const {
 const {
     updateTaskStatus,
     getTaskStatusHistory,
-    bulkUpdateTaskStatus,
     getTasksByStatus,
     getStatusStatistics,
 } = require("../controllers/task/task.status.controller");
 
 const {
     updateTaskPriority,
-    bulkUpdateTaskPriority,
     getTasksByPriority,
     getPriorityStatistics,
     getHighPriorityOverdueTasks,
-    autoPrioritizeTasks,
 } = require("../controllers/task/task.priority.controller");
 
 const {
@@ -65,7 +55,6 @@ const {
     getOverdueTasks,
     getTasksDueToday,
     sendDueDateReminders,
-    bulkUpdateDueDates,
     getDueDateStatistics,
 } = require("../controllers/task/task.due-date.controller");
 
@@ -74,8 +63,6 @@ const {
     removeCategoryFromTask,
     getTaskCategories,
     getCategoryTasks,
-    bulkAssignCategoriesToTask,
-    bulkAssignTasksToCategory,
 } = require("../controllers/task/task.category.controller");
 
 const {
@@ -83,8 +70,6 @@ const {
     removeTagFromTask,
     getTaskTags,
     getTagTasks,
-    bulkAssignTagsToTask,
-    bulkAssignTasksToTag,
     getPopularTagCombinations,
 } = require("../controllers/task/task.tag.controller");
 
@@ -156,14 +141,6 @@ router.get(
     asyncHandler(getTaskStatusHistory),
 );
 
-router.post(
-    "/bulk/status",
-    bulkOperationLimiter,
-    bulkUpdateTaskStatusValidation,
-    handleValidationErrors,
-    asyncHandler(bulkUpdateTaskStatus),
-);
-
 router.get("/status/:status", generalLimiter, asyncHandler(getTasksByStatus));
 
 router.get(
@@ -179,14 +156,6 @@ router.put(
     updateTaskPriorityValidation,
     handleValidationErrors,
     asyncHandler(updateTaskPriority),
-);
-
-router.post(
-    "/bulk/priority",
-    bulkOperationLimiter,
-    bulkUpdateTaskPriorityValidation,
-    handleValidationErrors,
-    asyncHandler(bulkUpdateTaskPriority),
 );
 
 router.get(
@@ -205,12 +174,6 @@ router.get(
     "/priority/high/overdue",
     generalLimiter,
     asyncHandler(getHighPriorityOverdueTasks),
-);
-
-router.post(
-    "/auto-prioritize",
-    heavyOperationLimiter,
-    asyncHandler(autoPrioritizeTasks),
 );
 
 // Due date operations
@@ -232,14 +195,6 @@ router.post(
     "/due/reminders",
     generalLimiter,
     asyncHandler(sendDueDateReminders),
-);
-
-router.post(
-    "/bulk/due-dates",
-    bulkOperationLimiter,
-    bulkUpdateDueDatesValidation,
-    handleValidationErrors,
-    asyncHandler(bulkUpdateDueDates),
 );
 
 router.get(
@@ -279,20 +234,6 @@ router.get(
     asyncHandler(getCategoryTasks),
 );
 
-router.post(
-    "/:taskId/categories/bulk",
-    bulkOperationLimiter,
-    bulkAssignCategoriesToTaskValidation,
-    handleValidationErrors,
-    asyncHandler(bulkAssignCategoriesToTask),
-);
-
-router.post(
-    "/categories/:categoryId/tasks/bulk",
-    bulkOperationLimiter,
-    asyncHandler(bulkAssignTasksToCategory),
-);
-
 // Tag operations
 router.post(
     "/:taskId/tags",
@@ -319,20 +260,6 @@ router.get(
 );
 
 router.get("/tags/:tagId/tasks", generalLimiter, asyncHandler(getTagTasks));
-
-router.post(
-    "/:taskId/tags/bulk",
-    bulkOperationLimiter,
-    bulkAssignTagsToTaskValidation,
-    handleValidationErrors,
-    asyncHandler(bulkAssignTagsToTask),
-);
-
-router.post(
-    "/tags/:tagId/tasks/bulk",
-    bulkOperationLimiter,
-    asyncHandler(bulkAssignTasksToTag),
-);
 
 router.get(
     "/tags/combinations/popular",

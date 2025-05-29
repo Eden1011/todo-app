@@ -157,35 +157,9 @@ const updateTaskStatusValidation = [
         ),
 ];
 
-const bulkUpdateTaskStatusValidation = [
-    body("taskIds")
-        .isArray({ min: 1 })
-        .withMessage("Task IDs must be a non-empty array"),
-    body("taskIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each task ID must be a positive integer"),
-    body("status")
-        .isIn(["TODO", "IN_PROGRESS", "REVIEW", "DONE", "CANCELED"])
-        .withMessage(
-            "Status must be TODO, IN_PROGRESS, REVIEW, DONE, or CANCELED",
-        ),
-];
-
 // Priority validation schemas
 const updateTaskPriorityValidation = [
     ...taskIdParamValidation,
-    body("priority")
-        .isIn(["LOW", "MEDIUM", "HIGH", "URGENT"])
-        .withMessage("Priority must be LOW, MEDIUM, HIGH, or URGENT"),
-];
-
-const bulkUpdateTaskPriorityValidation = [
-    body("taskIds")
-        .isArray({ min: 1 })
-        .withMessage("Task IDs must be a non-empty array"),
-    body("taskIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each task ID must be a positive integer"),
     body("priority")
         .isIn(["LOW", "MEDIUM", "HIGH", "URGENT"])
         .withMessage("Priority must be LOW, MEDIUM, HIGH, or URGENT"),
@@ -198,28 +172,6 @@ const updateTaskDueDateValidation = [
         .optional()
         .isISO8601()
         .withMessage("Due date must be a valid ISO8601 date"),
-];
-
-const bulkUpdateDueDatesValidation = [
-    body("taskIds")
-        .isArray({ min: 1 })
-        .withMessage("Task IDs must be a non-empty array"),
-    body("taskIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each task ID must be a positive integer"),
-    body("operation")
-        .isIn(["set", "extend", "clear"])
-        .withMessage("Operation must be set, extend, or clear"),
-    body("dueDate")
-        .if(body("operation").equals("set"))
-        .isISO8601()
-        .withMessage(
-            "Due date is required for set operation and must be valid ISO8601 date",
-        ),
-    body("dueDate")
-        .if(body("operation").equals("extend"))
-        .isInt({ min: 1 })
-        .withMessage("Number of days is required for extend operation"),
 ];
 
 // Category validation schemas
@@ -254,16 +206,6 @@ const addCategoryToTaskValidation = [
         .withMessage("Category ID must be a positive integer"),
 ];
 
-const bulkAssignCategoriesToTaskValidation = [
-    ...taskIdParamValidation,
-    body("categoryIds")
-        .isArray({ min: 1 })
-        .withMessage("Category IDs must be a non-empty array"),
-    body("categoryIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each category ID must be a positive integer"),
-];
-
 // Tag validation schemas
 const createTagValidation = [
     body("name")
@@ -294,16 +236,6 @@ const addTagToTaskValidation = [
     body("tagId")
         .isInt({ min: 1 })
         .withMessage("Tag ID must be a positive integer"),
-];
-
-const bulkAssignTagsToTaskValidation = [
-    ...taskIdParamValidation,
-    body("tagIds")
-        .isArray({ min: 1 })
-        .withMessage("Tag IDs must be a non-empty array"),
-    body("tagIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each tag ID must be a positive integer"),
 ];
 
 // Project validation schemas
@@ -366,42 +298,12 @@ const paginationValidation = [
         .withMessage("Limit must be between 1 and 100"),
 ];
 
-// Bulk delete validations - FIXED: Separate validations for each entity type
-const bulkDeleteValidation = [
-    body("ids")
-        .isArray({ min: 1 })
-        .withMessage("IDs must be a non-empty array"),
-    body("ids.*")
-        .isInt({ min: 1 })
-        .withMessage("Each ID must be a positive integer"),
-];
-
-// Specific bulk delete validation for categories
-const bulkDeleteCategoriesValidation = [
-    body("categoryIds")
-        .isArray({ min: 1 })
-        .withMessage("Category IDs must be a non-empty array"),
-    body("categoryIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each category ID must be a positive integer"),
-];
-
-// Specific bulk delete validation for tags
-const bulkDeleteTagsValidation = [
-    body("tagIds")
-        .isArray({ min: 1 })
-        .withMessage("Tag IDs must be a non-empty array"),
-    body("tagIds.*")
-        .isInt({ min: 1 })
-        .withMessage("Each tag ID must be a positive integer"),
-];
-
 // Export validation
 const exportValidation = [
     query("format")
         .optional()
-        .isIn(["csv", "json", "ical"])
-        .withMessage("Format must be csv, json, or ical"),
+        .isIn(["csv", "json"])
+        .withMessage("Format must be csv or json"),
     query("includeArchived")
         .optional()
         .isBoolean()
@@ -441,27 +343,22 @@ module.exports = {
 
     // Status validations
     updateTaskStatusValidation,
-    bulkUpdateTaskStatusValidation,
 
     // Priority validations
     updateTaskPriorityValidation,
-    bulkUpdateTaskPriorityValidation,
 
     // Due date validations
     updateTaskDueDateValidation,
-    bulkUpdateDueDatesValidation,
 
     // Category validations
     createCategoryValidation,
     updateCategoryValidation,
     addCategoryToTaskValidation,
-    bulkAssignCategoriesToTaskValidation,
 
     // Tag validations
     createTagValidation,
     updateTagValidation,
     addTagToTaskValidation,
-    bulkAssignTagsToTaskValidation,
 
     // Project validations
     createProjectValidation,
@@ -475,9 +372,4 @@ module.exports = {
     paginationValidation,
     exportValidation,
     handleValidationErrors,
-
-    // Bulk delete validations - FIXED: Now includes specific validations
-    bulkDeleteValidation, // Generic
-    bulkDeleteCategoriesValidation, // For categories
-    bulkDeleteTagsValidation, // For tags
 };

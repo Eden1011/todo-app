@@ -18,15 +18,6 @@ const createTaskLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Bulk operations rate limiting
-const bulkOperationLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 10, // 10 bulk operations per 10 minutes
-    message: "Too many bulk operations, please try again later",
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
 // Creation operations rate limiting (categories, tags, projects)
 const createResourceLimiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
@@ -72,15 +63,6 @@ const statsLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Heavy operations rate limiting (like auto-prioritize)
-const heavyOperationLimiter = rateLimit({
-    windowMs: 30 * 60 * 1000, // 30 minutes
-    max: 3, // 3 heavy operations per 30 minutes
-    message: "Too many heavy operations, please try again later",
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
 // Delete operations rate limiting
 const deleteLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes
@@ -102,13 +84,11 @@ const updateLimiter = rateLimit({
 module.exports = {
     generalLimiter,
     createTaskLimiter,
-    bulkOperationLimiter,
     createResourceLimiter,
     searchLimiter,
     exportLimiter,
     notificationLimiter,
     statsLimiter,
-    heavyOperationLimiter,
     deleteLimiter,
     updateLimiter,
 };

@@ -8,7 +8,6 @@ const {
     updateLimiter,
     deleteLimiter,
     statsLimiter,
-    bulkOperationLimiter,
 } = require("../middleware/rate-limit");
 
 // Import validations
@@ -17,7 +16,6 @@ const {
     updateCategoryValidation,
     idParamValidation,
     paginationValidation,
-    bulkDeleteCategoriesValidation,
     handleValidationErrors,
 } = require("../middleware/validation");
 
@@ -28,7 +26,6 @@ const {
     updateCategory,
     deleteCategory,
     getCategoryStats,
-    bulkDeleteCategories,
 } = require("../controllers/category/category.controller");
 
 const router = express.Router();
@@ -52,16 +49,6 @@ router.get(
 
 // Stats route (specific route before /:id)
 router.get("/stats", statsLimiter, asyncHandler(getCategoryStats));
-
-// IMPORTANT: Bulk operations MUST come BEFORE /:id routes
-// This fixes the route matching issue where /bulk was matched by /:id
-router.delete(
-    "/bulk",
-    bulkOperationLimiter,
-    bulkDeleteCategoriesValidation,
-    handleValidationErrors,
-    asyncHandler(bulkDeleteCategories),
-);
 
 // Parameter routes come AFTER specific routes
 router.get(

@@ -82,7 +82,6 @@ async function getCategories(req, res) {
         if (search) {
             where.name = {
                 contains: search,
-                mode: "insensitive",
             };
         }
 

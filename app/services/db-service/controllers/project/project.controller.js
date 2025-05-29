@@ -95,11 +95,10 @@ async function getProjects(req, res) {
                 where.OR ? { OR: where.OR } : { ownerId: user.id },
                 {
                     OR: [
-                        { name: { contains: search, mode: "insensitive" } },
+                        { name: { contains: search } },
                         {
                             description: {
                                 contains: search,
-                                mode: "insensitive",
                             },
                         },
                     ],

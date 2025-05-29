@@ -89,7 +89,6 @@ async function getTags(req, res) {
         if (search) {
             where.name = {
                 contains: search,
-                mode: "insensitive",
             };
         }
 
@@ -367,72 +366,6 @@ async function getTagStats(req, res) {
 }
 
 /**
- * Bulk delete tags
- */
-async function bulkDeleteTags(req, res) {
-    try {
-        const authId = req.user.id;
-        const user = await getOrCreateUser(authId);
-        const { tagIds } = req.body;
-
-        if (!Array.isArray(tagIds) || tagIds.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Tag IDs array is required",
-            });
-        }
-
-        // Check if all tags exist and belong to user
-        const tags = await prisma.tag.findMany({
-            where: {
-                id: { in: tagIds },
-                ownerId: user.id,
-            },
-            include: {
-                _count: {
-                    select: { tasks: true },
-                },
-            },
-        });
-
-        if (tags.length !== tagIds.length) {
-            return res.status(404).json({
-                success: false,
-                error: "Some tags not found or don't belong to you",
-            });
-        }
-
-        // Check if any tags have tasks
-        const tagsWithTasks = tags.filter((tag) => tag._count.tasks > 0);
-        if (tagsWithTasks.length > 0) {
-            return res.status(400).json({
-                success: false,
-                error: `Cannot delete tags with tasks: ${tagsWithTasks.map((tag) => tag.name).join(", ")}`,
-            });
-        }
-
-        const result = await prisma.tag.deleteMany({
-            where: {
-                id: { in: tagIds },
-                ownerId: user.id,
-            },
-        });
-
-        res.json({
-            success: true,
-            data: {
-                message: `${result.count} tags deleted successfully`,
-            },
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-}
-
-/**
  * Get popular tags (most used)
  */
 async function getPopularTags(req, res) {
@@ -477,6 +410,5 @@ module.exports = {
     updateTag,
     deleteTag,
     getTagStats,
-    bulkDeleteTags,
     getPopularTags,
 };

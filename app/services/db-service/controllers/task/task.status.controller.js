@@ -151,100 +151,6 @@ async function getTaskStatusHistory(req, res) {
 }
 
 /**
- * Bulk update task statuses
- */
-async function bulkUpdateTaskStatus(req, res) {
-    try {
-        const authId = req.user.id;
-        const user = await getOrCreateUser(authId);
-        const { taskIds, status } = req.body;
-
-        // Validate input
-        if (!Array.isArray(taskIds) || taskIds.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Task IDs array is required",
-            });
-        }
-
-        const validStatuses = [
-            "TODO",
-            "IN_PROGRESS",
-            "REVIEW",
-            "DONE",
-            "CANCELED",
-        ];
-        if (!status || !validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid status. Valid statuses are: ${validStatuses.join(", ")}`,
-            });
-        }
-
-        // Check if user has access to all tasks
-        const tasks = await prisma.task.findMany({
-            where: {
-                id: { in: taskIds },
-                OR: [{ ownerId: user.id }, { assigneeId: user.id }],
-            },
-            select: {
-                id: true,
-                title: true,
-                ownerId: true,
-                assigneeId: true,
-            },
-        });
-
-        if (tasks.length !== taskIds.length) {
-            return res.status(404).json({
-                success: false,
-                error: "Some tasks not found or you don't have access to them",
-            });
-        }
-
-        // Update all tasks
-        const result = await prisma.task.updateMany({
-            where: {
-                id: { in: taskIds },
-                OR: [{ ownerId: user.id }, { assigneeId: user.id }],
-            },
-            data: {
-                status,
-                updatedAt: new Date(),
-            },
-        });
-
-        // Send notifications for each task
-        for (const task of tasks) {
-            const usersToNotify = [];
-            if (task.ownerId !== user.id) {
-                usersToNotify.push(task.ownerId);
-            }
-            if (task.assigneeId && task.assigneeId !== user.id) {
-                usersToNotify.push(task.assigneeId);
-            }
-
-            if (usersToNotify.length > 0) {
-                await notifyTaskStatusChanged(task.id, status, usersToNotify);
-            }
-        }
-
-        res.json({
-            success: true,
-            data: {
-                message: `${result.count} tasks updated to ${status} status`,
-                updatedCount: result.count,
-            },
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-}
-
-/**
  * Get tasks by status for user
  */
 async function getTasksByStatus(req, res) {
@@ -383,7 +289,6 @@ async function getStatusStatistics(req, res) {
 module.exports = {
     updateTaskStatus,
     getTaskStatusHistory,
-    bulkUpdateTaskStatus,
     getTasksByStatus,
     getStatusStatistics,
 };
