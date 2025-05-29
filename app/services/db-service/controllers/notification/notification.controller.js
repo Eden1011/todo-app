@@ -364,12 +364,17 @@ async function notifyTaskAssigned(taskId, assigneeUserId, assignerAuthId) {
  */
 async function notifyTaskStatusChanged(taskId, newStatus, userIds) {
     try {
+        // Return early if no users to notify
+        if (!userIds || userIds.length === 0) {
+            return;
+        }
+
         const task = await prisma.task.findUnique({
             where: { id: taskId },
             select: { title: true },
         });
 
-        if (task && userIds.length > 0) {
+        if (task) {
             const notifications = userIds.map((userId) => ({
                 userId,
                 type: "TASK_STATUS_CHANGED",
