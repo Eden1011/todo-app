@@ -102,7 +102,7 @@ describe("User Controller", () => {
 
         it("should throw error on database failure", async () => {
             mockPrismaClient.user.findUnique.mockRejectedValue(
-                new Error("Database error"),
+                new Error("Failed to get or create user: Database error"),
             );
 
             await expect(getOrCreateUser(1)).rejects.toThrow(
@@ -170,7 +170,7 @@ describe("User Controller", () => {
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({
                 success: false,
-                error: "Database error",
+                error: "Failed to get or create user: Database error",
             });
         });
     });
