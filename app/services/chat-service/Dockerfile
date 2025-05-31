@@ -1,7 +1,8 @@
 # Use Node.js LTS version
 FROM node:18-alpine
 
-# Set working directory
+RUN apk add --no-cache wget
+
 WORKDIR /app
 
 # Copy package files
