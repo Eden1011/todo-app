@@ -24,6 +24,7 @@ const {
     createProject,
     getProjects,
     getProjectById,
+    getProjectChatInfo,
     updateProject,
     deleteProject,
     addMember,
@@ -55,6 +56,15 @@ router.get(
     idParamValidation,
     handleValidationErrors,
     asyncHandler(getProjectById),
+);
+
+// Get project chat information
+router.get(
+    "/:id/chat",
+    generalLimiter,
+    idParamValidation,
+    handleValidationErrors,
+    asyncHandler(getProjectChatInfo),
 );
 
 router.put(

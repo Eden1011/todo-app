@@ -1,0 +1,38 @@
+{
+    "name": "chat-service",
+    "version": "1.0.0",
+    "description": "WebSocket chat service for project communication",
+    "main": "server.js",
+    "scripts": {
+        "start": "nodemon server.js",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage"
+    },
+    "keywords": [
+        "websocket",
+        "chat",
+        "express",
+        "mongodb"
+    ],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "express": "^5.1.0",
+        "socket.io": "^4.7.5",
+        "mongoose": "^8.0.3",
+        "axios": "^1.6.2",
+        "dotenv": "^16.5.0",
+        "express-rate-limit": "^7.5.0",
+        "express-validator": "^7.2.1",
+        "morgan": "^1.10.0",
+        "cors": "^2.8.5",
+        "jsonwebtoken": "^9.0.2"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "nodemon": "^3.1.10",
+        "supertest": "^7.1.0"
+    }
+}

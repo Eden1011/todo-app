@@ -1,5 +1,10 @@
 const { PrismaClient } = require("@prisma/client");
 const { getOrCreateUser } = require("../user/user.controller");
+const {
+    createProjectChat,
+    getProjectChats,
+    getOrCreateDefaultChat,
+} = require("../../utils/chat-service.connection");
 
 const prisma = new PrismaClient();
 
@@ -45,10 +50,35 @@ async function createProject(req, res) {
             },
         });
 
-        res.status(201).json({
-            success: true,
-            data: project,
+        // Create default chat for the project (non-blocking)
+        const chatResult = await createProjectChat({
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            ownerId: authId, // Use authId for chat service
+            members: project.members.map((member) => ({
+                userId: member.user.authId,
+                role: member.role,
+            })),
         });
+
+        // Enhanced response with chat information
+        const response = {
+            success: true,
+            data: {
+                ...project,
+                chat: chatResult.success
+                    ? {
+                          id: chatResult.chatId,
+                          name: chatResult.chatName,
+                          created: true,
+                      }
+                    : null,
+                chatCreationResult: chatResult,
+            },
+        };
+
+        res.status(201).json(response);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -72,6 +102,7 @@ async function getProjects(req, res) {
             ownedOnly = false,
             sortBy = "updatedAt",
             sortOrder = "desc",
+            includeChats = false,
         } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -128,10 +159,44 @@ async function getProjects(req, res) {
             prisma.project.count({ where }),
         ]);
 
+        // Optionally include chat information
+        let enhancedProjects = projects;
+        if (includeChats === "true") {
+            const token = req.headers.authorization?.split(" ")[1];
+            if (token) {
+                enhancedProjects = await Promise.all(
+                    projects.map(async (project) => {
+                        try {
+                            const chats = await getProjectChats(
+                                project.id,
+                                token,
+                            );
+                            return {
+                                ...project,
+                                chats: chats || [],
+                                chatCount: chats ? chats.length : 0,
+                            };
+                        } catch (error) {
+                            console.error(
+                                `Failed to get chats for project ${project.id}:`,
+                                error.message,
+                            );
+                            return {
+                                ...project,
+                                chats: [],
+                                chatCount: 0,
+                                chatError: "Failed to load chats",
+                            };
+                        }
+                    }),
+                );
+            }
+        }
+
         res.json({
             success: true,
             data: {
-                projects,
+                projects: enhancedProjects,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
@@ -156,6 +221,7 @@ async function getProjectById(req, res) {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const projectId = parseInt(req.params.id);
+        const { includeChats = false } = req.query;
 
         const project = await prisma.project.findFirst({
             where: {
@@ -194,10 +260,111 @@ async function getProjectById(req, res) {
             });
         }
 
+        // Optionally include chat information
+        let enhancedProject = project;
+        if (includeChats === "true") {
+            const token = req.headers.authorization?.split(" ")[1];
+            if (token) {
+                try {
+                    const chats = await getProjectChats(project.id, token);
+                    enhancedProject = {
+                        ...project,
+                        chats: chats || [],
+                        chatCount: chats ? chats.length : 0,
+                    };
+                } catch (error) {
+                    console.error(
+                        `Failed to get chats for project ${project.id}:`,
+                        error.message,
+                    );
+                    enhancedProject = {
+                        ...project,
+                        chats: [],
+                        chatCount: 0,
+                        chatError: "Failed to load chats",
+                    };
+                }
+            }
+        }
+
         res.json({
             success: true,
-            data: project,
+            data: enhancedProject,
         });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+}
+
+/**
+ * Get project chat information
+ */
+async function getProjectChatInfo(req, res) {
+    try {
+        const authId = req.user.id;
+        const user = await getOrCreateUser(authId);
+        const projectId = parseInt(req.params.id);
+
+        // Check if user has access to the project
+        const project = await prisma.project.findFirst({
+            where: {
+                id: projectId,
+                OR: [
+                    { ownerId: user.id },
+                    { members: { some: { userId: user.id } } },
+                ],
+            },
+            include: {
+                owner: { select: { id: true, authId: true } },
+                members: {
+                    include: {
+                        user: { select: { id: true, authId: true } },
+                    },
+                },
+            },
+        });
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                error: "Project not found or you don't have access to it",
+            });
+        }
+
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                error: "Authorization token required",
+            });
+        }
+
+        try {
+            // Get project chats
+            const chats = await getProjectChats(projectId, token);
+
+            // Also get/create default chat
+            const defaultChat = await getOrCreateDefaultChat(projectId, token);
+
+            res.json({
+                success: true,
+                data: {
+                    projectId: projectId,
+                    projectName: project.name,
+                    chats: chats || [],
+                    defaultChat: defaultChat,
+                    totalChats: chats ? chats.length : 0,
+                },
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: `Failed to get project chat information: ${error.message}`,
+            });
+        }
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -517,6 +684,7 @@ module.exports = {
     createProject,
     getProjects,
     getProjectById,
+    getProjectChatInfo,
     updateProject,
     deleteProject,
     addMember,
