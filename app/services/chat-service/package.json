@@ -5,6 +5,12 @@
     "main": "server.js",
     "scripts": {
         "start": "nodemon server.js",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f",
+        "docker:rebuild": "docker-compose build chat-service && docker-compose up -d chat-service",
+        "docker:mongo": "docker-compose up mongo -d",
+        "docker:reset": "docker-compose down -v && docker-compose up -d",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"

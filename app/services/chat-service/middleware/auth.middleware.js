@@ -1,12 +1,5 @@
 const axios = require("axios");
-const jwt = require("jsonwebtoken");
 
-const AUTH_SERVICE_URL =
-    process.env.AUTH_SERVICE_URL || "http://localhost:3000";
-
-/**
- * Middleware to authenticate JWT tokens via auth-service
- */
 async function authenticateToken(req, res, next) {
     try {
         const authHeader = req.headers["authorization"];
@@ -19,19 +12,22 @@ async function authenticateToken(req, res, next) {
             });
         }
 
-        // Verify token with auth-service
+        const authServiceUrl =
+            process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+
         const response = await axios.post(
-            `${AUTH_SERVICE_URL}/local/token/verify`,
+            `${authServiceUrl}/local/token/verify`,
             {},
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                timeout: 5000,
+                timeout: 5000, // 5 seconds timeout
             },
         );
 
+        // If auth-service confirmed the token
         if (response.data.success && response.data.data.valid) {
             req.user = response.data.data.user;
             req.token = token;
@@ -43,27 +39,34 @@ async function authenticateToken(req, res, next) {
             });
         }
     } catch (error) {
-        console.error("Token verification error:", error.message);
-
+        // Handle communication errors with auth-service
         if (error.response) {
+            // Auth-service responded with an error
             const status = error.response.status;
             const message =
                 error.response.data?.error || "Token verification failed";
+
             return res.status(status).json({
                 success: false,
                 error: message,
             });
         } else if (error.code === "ECONNREFUSED") {
+            // Auth-service is not available
+            console.error("Auth service is not available:", error.message);
             return res.status(503).json({
                 success: false,
                 error: "Authentication service unavailable",
             });
         } else if (error.code === "ECONNABORTED") {
+            // Timeout
+            console.error("Auth service timeout:", error.message);
             return res.status(504).json({
                 success: false,
                 error: "Authentication service timeout",
             });
         } else {
+            // Other errors
+            console.error("Auth service error:", error.message);
             return res.status(500).json({
                 success: false,
                 error: "Internal authentication error",
@@ -74,12 +77,15 @@ async function authenticateToken(req, res, next) {
 
 /**
  * Authenticate socket connection
+ * Updated to match the HTTP middleware pattern
  */
 async function authenticateSocket(token) {
     try {
-        // Verify token with auth-service
+        const authServiceUrl =
+            process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+
         const response = await axios.post(
-            `${AUTH_SERVICE_URL}/local/token/verify`,
+            `${authServiceUrl}/local/token/verify`,
             {},
             {
                 headers: {
@@ -93,10 +99,14 @@ async function authenticateSocket(token) {
         if (response.data.success && response.data.data.valid) {
             return response.data.data.user;
         } else {
-            throw new Error("Invalid token");
+            throw new Error("Invalid or expired token");
         }
     } catch (error) {
-        console.error("Socket token verification error:", error.message);
+        console.error("Socket token verification error:", {
+            message: error.message,
+            code: error.code,
+            response: error.response?.data,
+        });
         throw new Error("Authentication failed");
     }
 }

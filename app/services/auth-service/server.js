@@ -29,6 +29,15 @@ app.use("/local/user", local.user);
 
 app.use("/oauth", oauth.google);
 
+app.get("/health", (_req, res) => {
+    res.status(200).json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        service: "auth-service",
+        version: "1.0.0",
+    });
+});
+
 (() => {
     if (process.env.NODE_ENV === "development") {
         app.use(
