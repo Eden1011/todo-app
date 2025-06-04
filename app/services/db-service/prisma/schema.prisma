@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -23,8 +23,8 @@ model User {
 
 model Task {
   id            Int               @id @default(autoincrement())
-  title         String
-  description   String?
+  title         String            @db.VarChar(255)
+  description   String?           @db.Text
   priority      TaskPriority      @default(MEDIUM)
   status        TaskStatus        @default(TODO)
   dueDate       DateTime?
@@ -50,8 +50,8 @@ model Task {
 
 model Project {
   id          Int             @id @default(autoincrement())
-  name        String
-  description String?
+  name        String          @db.VarChar(255)
+  description String?         @db.Text
   ownerId     Int
   owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt   DateTime        @default(now())
@@ -79,8 +79,8 @@ model ProjectMember {
 
 model Category {
   id        Int              @id @default(autoincrement())
-  name      String
-  color     String?
+  name      String           @db.VarChar(255)
+  color     String?          @db.VarChar(7)
   ownerId   Int
   owner     User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
@@ -104,8 +104,8 @@ model CategoryOnTask {
 
 model Tag {
   id        Int         @id @default(autoincrement())
-  name      String
-  color     String?
+  name      String      @db.VarChar(255)
+  color     String?     @db.VarChar(7)
   ownerId   Int
   owner     User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())
@@ -130,7 +130,7 @@ model TagOnTask {
 model Notification {
   id            Int              @id @default(autoincrement())
   type          NotificationType
-  content       String
+  content       String           @db.Text
   isRead        Boolean          @default(false)
   userId        Int
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
