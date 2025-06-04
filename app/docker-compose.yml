@@ -1,0 +1,192 @@
+services:
+    # MariaDB Database
+    mariadb:
+        image: mariadb:10.11
+        container_name: todo-mariadb
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_DATABASE: todo_main
+            MYSQL_USER: todoapp
+            MYSQL_PASSWORD: password
+        ports:
+            - "3306:3306"
+        volumes:
+            - mariadb_data:/var/lib/mysql
+            - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+        networks:
+            - todo-network
+        healthcheck:
+            test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
+    # MongoDB for chat service
+    mongodb:
+        image: mongo:7
+        container_name: todo-mongodb
+        restart: unless-stopped
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: password
+            MONGO_INITDB_DATABASE: chat_service
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongodb_data:/data/db
+        networks:
+            - todo-network
+        healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+            interval: 10s
+            timeout: 10s
+            retries: 5
+            start_period: 40s
+
+    # Auth Service
+    auth-service:
+        build:
+            context: ./services/auth-service
+            dockerfile: Dockerfile
+        container_name: todo-auth-service
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            PORT: 3000
+            DATABASE_URL: "mysql://todoapp:password@mariadb:3306/auth_service"
+            ACCESS_TOKEN_SECRET: "75a09b812d16c5c9bdadfce8fb6daa032a0ffb4046857c8c505fd7f739630ac4bb7f79749d52e9de1e43465925d812498dccbfce9252aa12db2103fe4e7c1af"
+            REFRESH_TOKEN_SECRET: "73d26f6f100ba8fd113db4d1b17ed484b53f8bf852d05879894b37f66f0c7abbd4f9b53d5e162438299b997460fdd3f932c11c981ba4bb84a1be4ad7048962b"
+            REFRESH_TOKEN_EXPIRATION_DATE: "7d"
+            ACCESS_TOKEN_EXPIRATION: "15m"
+            EMAIL_EXPIRATION: "1d"
+            APP_NAME: "Todo App"
+            APP_URL: "http://localhost:3000"
+            AUTO_LOGIN_AFTER_REGISTER: "true"
+            SMTP_HOST: "smtp.gmail.com"
+            SMTP_PORT: "587"
+            SMTP_USER: "glovkakrzys252@gmail.com"
+            SMTP_PASS: "hdoj srmy ivcr wovr"
+            FROM_EMAIL: "glovkakrzys252@gmail.com"
+            GOOGLE_CLIENT_ID: "672707256810-dg697akric7qush3aafdsfg01nlat90i.apps.googleusercontent.com"
+            GOOGLE_CLIENT_SECRET: "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"
+            LOCAL_AUTH_URI: "local"
+            LOCAL_EMAIL_VERIFY_URI: "email"
+            OAUTH_URI: "oauth"
+            OAUTH_GOOGLE_URI: "google"
+            OAUTH_GOOGLE_CALLBACK_URI: "callback"
+        ports:
+            - "3000:3000"
+        depends_on:
+            mariadb:
+                condition: service_healthy
+        networks:
+            - todo-network
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:3000/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    # DB Service
+    db-service:
+        build:
+            context: ./services/db-service
+            dockerfile: Dockerfile
+        container_name: todo-db-service
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            PORT: 4000
+            DATABASE_URL: "mysql://todoapp:password@mariadb:3306/db_service"
+            AUTH_SERVICE_URL: "http://auth-service:3000"
+            CHAT_SERVICE_URL: "http://chat-service:5000"
+            SMTP_HOST: "smtp.gmail.com"
+            SMTP_PORT: "587"
+            SMTP_USER: "glovkakrzys252@gmail.com"
+            SMTP_PASS: "hdoj srmy ivcr wovr"
+            FROM_EMAIL: "glovkakrzys252@gmail.com"
+            APP_NAME: "Todo App"
+            DISABLE_RATE_LIMIT: "false"
+        ports:
+            - "4000:4000"
+        depends_on:
+            auth-service:
+                condition: service_healthy
+            mariadb:
+                condition: service_healthy
+        networks:
+            - todo-network
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:4000/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    # Chat Service
+    chat-service:
+        build:
+            context: ./services/chat-service
+            dockerfile: Dockerfile
+        container_name: todo-chat-service
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            PORT: 5000
+            MONGODB_URI: "mongodb://admin:password@mongodb:27017/chat_service?authSource=admin"
+            AUTH_SERVICE_URL: "http://auth-service:3000"
+            DB_SERVICE_URL: "http://db-service:4000"
+            ACCESS_TOKEN_SECRET: "75a09b812d16c5c9bdadfce8fb6daa032a0ffb4046857c8c505fd7f739630ac4bb7f79749d52e9de1e43465925d812498dccbfce9252aa12db2103fe4e7c1af"
+            CORS_ORIGIN: "http://localhost:3000"
+            DISABLE_RATE_LIMIT: "false"
+        ports:
+            - "5000:5000"
+        depends_on:
+            auth-service:
+                condition: service_healthy
+            db-service:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        networks:
+            - todo-network
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:5000/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+volumes:
+    mariadb_data:
+        driver: local
+    mongodb_data:
+        driver: local
+
+networks:
+    todo-network:
+        driver: bridge

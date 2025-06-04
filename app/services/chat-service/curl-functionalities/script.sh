@@ -44,6 +44,7 @@ make_request() {
         echo -e "${PURPLE}📤 $data${NC}"
     fi
     
+    local response
     if [ "$method" = "GET" ]; then
         response=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $ACCESS_TOKEN" \
                   -H "Content-Type: application/json" \
@@ -64,8 +65,8 @@ make_request() {
     fi
     
     # Split response and status code
-    status_code=$(echo "$response" | tail -n1)
-    response_body=$(echo "$response" | head -n -1)
+    local status_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
     
     if [ "$status_code" -eq "$expected_status" ]; then
         echo -e "${GREEN}✓ Success (HTTP $status_code)${NC}"
@@ -85,12 +86,12 @@ make_request() {
 
 # Function to extract ID from JSON response
 extract_id() {
-    echo "$1" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2
+    echo "$1" | grep -oE '"id":\s*[0-9]+' | head -1 | grep -oE '[0-9]+' || echo ""
 }
 
 # Function to extract chat ID from JSON response (MongoDB ObjectId)
 extract_chat_id() {
-    echo "$1" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4
+    echo "$1" | grep -oE '"id":\s*"[^"]*"' | head -1 | cut -d'"' -f4 || echo ""
 }
 
 # Function to display a nice separator
@@ -104,11 +105,16 @@ display_conversation() {
     echo -e "${YELLOW}📱 CHAT CONVERSATION${NC}"
     echo -e "${YELLOW}==================${NC}"
     
-    # Parse and display messages
-    echo "$messages" | jq -r '.data.messages[] | "[\(.createdAt)] User \(.userId): \(.content)"' 2>/dev/null || {
-        echo "Raw messages data:"
+    # Check if jq is available and parse messages
+    if command -v jq >/dev/null 2>&1; then
+        echo "$messages" | jq -r '.data.messages[]? | "[\(.createdAt)] User \(.userId): \(.content)"' 2>/dev/null || {
+            echo "Raw messages data:"
+            echo "$messages"
+        }
+    else
+        echo "Raw messages data (jq not available):"
         echo "$messages"
-    }
+    fi
     echo -e "${YELLOW}==================${NC}"
 }
 
@@ -127,13 +133,13 @@ echo -e "${YELLOW}=== 1. HEALTH CHECKS ===${NC}"
 
 echo -e "${BLUE}📋 Testing DB service health${NC}"
 echo -e "${CYAN}🔧 GET $DB_SERVICE_URL/health${NC}"
-db_health=$(curl -s "$DB_SERVICE_URL/health")
+db_health=$(curl -s "$DB_SERVICE_URL/health" || echo "Failed to connect")
 echo "$db_health"
 echo
 
 echo -e "${BLUE}📋 Testing Chat service health${NC}"
 echo -e "${CYAN}🔧 GET $CHAT_SERVICE_URL/health${NC}"
-chat_health=$(curl -s "$CHAT_SERVICE_URL/health")
+chat_health=$(curl -s "$CHAT_SERVICE_URL/health" || echo "Failed to connect")
 echo "$chat_health"
 echo
 
@@ -144,12 +150,15 @@ print_separator
 # =============================================================================
 echo -e "${YELLOW}=== 2. PROJECT CREATION (VIA DB-SERVICE) ===${NC}"
 
-project_response=$(make_request "POST" "$DB_SERVICE_URL" "/api/project" '{
-    "name":"Chat Test Project",
-    "description":"A project created specifically for testing chat functionality"
-}' 201 "Create test project for chat testing")
+project_response=$(make_request "POST" "$DB_SERVICE_URL" "/api/project" \
+    '{"name":"Chat Test Project","description":"A project created specifically for testing chat functionality"}' \
+    201 "Create test project for chat testing")
 
 project_id=$(extract_id "$project_response")
+if [ -z "$project_id" ]; then
+    echo -e "${RED}❌ Failed to extract project ID${NC}"
+    exit 1
+fi
 echo -e "${GREEN}✅ Created project with ID: $project_id${NC}"
 echo
 
@@ -161,7 +170,7 @@ print_separator
 echo -e "${YELLOW}=== 3. CHAT SERVICE ENDPOINTS TESTING ===${NC}"
 
 # Test chat service info endpoint
-make_request "GET" "$CHAT_SERVICE_URL" "/socket/info" "" 200 "Get Socket.IO connection info"
+make_request "GET" "$CHAT_SERVICE_URL" "/socket/info" "" 200 "Get Socket.IO connection info" || echo "Info endpoint not available"
 echo
 
 # Get user's chats (should be empty initially)
@@ -175,6 +184,10 @@ echo
 # Get or create default chat for the project
 default_chat_response=$(make_request "GET" "$CHAT_SERVICE_URL" "/api/chats/project/$project_id/default" "" 200 "Get or create default chat for project")
 default_chat_id=$(extract_chat_id "$default_chat_response")
+if [ -z "$default_chat_id" ]; then
+    echo -e "${RED}❌ Failed to extract default chat ID${NC}"
+    exit 1
+fi
 echo -e "${GREEN}✅ Default chat ID: $default_chat_id${NC}"
 echo
 
@@ -185,13 +198,15 @@ print_separator
 # =============================================================================
 echo -e "${YELLOW}=== 4. CREATE ADDITIONAL CHAT FOR PROJECT ===${NC}"
 
-additional_chat_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/chats" '{
-    "projectId":'$project_id',
-    "name":"Development Discussion",
-    "description":"Chat for development team discussions"
-}' 201 "Create additional chat for the project")
+additional_chat_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/chats" \
+    "{\"projectId\":$project_id,\"name\":\"Development Discussion\",\"description\":\"Chat for development team discussions\"}" \
+    201 "Create additional chat for the project")
 
 additional_chat_id=$(extract_chat_id "$additional_chat_response")
+if [ -z "$additional_chat_id" ]; then
+    echo -e "${RED}❌ Failed to extract additional chat ID${NC}"
+    exit 1
+fi
 echo -e "${GREEN}✅ Additional chat ID: $additional_chat_id${NC}"
 echo
 
@@ -209,47 +224,41 @@ echo -e "${YELLOW}=== 5. SEND MESSAGES TO CHATS ===${NC}"
 echo -e "${BLUE}📋 Sending messages to default chat${NC}"
 
 # Send welcome message to default chat
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" '{
-    "content":"Welcome to our Chat Test Project! This is the first message.",
-    "messageType":"text"
-}' 201 "Send welcome message to default chat"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" \
+    '{"content":"Welcome to our Chat Test Project! This is the first message.","messageType":"text"}' \
+    201 "Send welcome message to default chat"
 echo
 
 # Send project update message
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" '{
-    "content":"Project setup is complete. Ready to start development!",
-    "messageType":"text"
-}' 201 "Send project update message"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" \
+    '{"content":"Project setup is complete. Ready to start development!","messageType":"text"}' \
+    201 "Send project update message"
 echo
 
 # Send question message
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" '{
-    "content":"Does anyone have questions about the project requirements?",
-    "messageType":"text"
-}' 201 "Send question message"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" \
+    '{"content":"Does anyone have questions about the project requirements?","messageType":"text"}' \
+    201 "Send question message"
 echo
 
 echo -e "${BLUE}📋 Sending messages to development chat${NC}"
 
 # Send technical message to development chat
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" '{
-    "content":"Let\'s discuss the technical architecture for this project.",
-    "messageType":"text"
-}' 201 "Send technical message to development chat"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" \
+    '{"content":"Let'\''s discuss the technical architecture for this project.","messageType":"text"}' \
+    201 "Send technical message to development chat"
 echo
 
 # Send code-related message
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" '{
-    "content":"I suggest we use microservices architecture with Docker containers.",
-    "messageType":"text"
-}' 201 "Send architecture suggestion message"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" \
+    '{"content":"I suggest we use microservices architecture with Docker containers.","messageType":"text"}' \
+    201 "Send architecture suggestion message"
 echo
 
 # Send agreement message
-make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" '{
-    "content":"That sounds like a great approach! Should we start with the auth service?",
-    "messageType":"text"
-}' 201 "Send agreement message"
+make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$additional_chat_id" \
+    '{"content":"That sounds like a great approach! Should we start with the auth service?","messageType":"text"}' \
+    201 "Send agreement message"
 echo
 
 print_separator
@@ -290,10 +299,9 @@ make_request "GET" "$CHAT_SERVICE_URL" "/api/chats/$additional_chat_id" "" 200 "
 echo
 
 # Update chat
-make_request "PUT" "$CHAT_SERVICE_URL" "/api/chats/$additional_chat_id" '{
-    "name":"Development & Architecture Discussion",
-    "description":"Enhanced chat for development team discussions and architecture planning"
-}' 200 "Update development chat name and description"
+make_request "PUT" "$CHAT_SERVICE_URL" "/api/chats/$additional_chat_id" \
+    '{"name":"Development & Architecture Discussion","description":"Enhanced chat for development team discussions and architecture planning"}' \
+    200 "Update development chat name and description"
 echo
 
 # Get chat statistics
@@ -308,31 +316,29 @@ print_separator
 echo -e "${YELLOW}=== 8. MESSAGE MANAGEMENT OPERATIONS ===${NC}"
 
 # Send a message we'll later edit
-edit_message_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" '{
-    "content":"This message will be edited shortly.",
-    "messageType":"text"
-}' 201 "Send message that will be edited")
+edit_message_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" \
+    '{"content":"This message will be edited shortly.","messageType":"text"}' \
+    201 "Send message that will be edited")
 
-# Extract message ID for editing (assuming it returns the message with _id)
-edit_message_id=$(echo "$edit_message_response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+# Extract message ID for editing
+edit_message_id=$(extract_chat_id "$edit_message_response")
 echo -e "${GREEN}✅ Message to edit ID: $edit_message_id${NC}"
 
 # Edit the message
 if [ -n "$edit_message_id" ]; then
-    make_request "PUT" "$CHAT_SERVICE_URL" "/api/messages/$edit_message_id" '{
-        "content":"This message has been successfully edited!"
-    }' 200 "Edit the message content"
+    make_request "PUT" "$CHAT_SERVICE_URL" "/api/messages/$edit_message_id" \
+        '{"content":"This message has been successfully edited!"}' \
+        200 "Edit the message content"
     echo
 fi
 
 # Send a message we'll later delete
-delete_message_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" '{
-    "content":"This message will be deleted.",
-    "messageType":"text"
-}' 201 "Send message that will be deleted")
+delete_message_response=$(make_request "POST" "$CHAT_SERVICE_URL" "/api/messages/chat/$default_chat_id" \
+    '{"content":"This message will be deleted.","messageType":"text"}' \
+    201 "Send message that will be deleted")
 
 # Extract message ID for deletion
-delete_message_id=$(echo "$delete_message_response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+delete_message_id=$(extract_chat_id "$delete_message_response")
 echo -e "${GREEN}✅ Message to delete ID: $delete_message_id${NC}"
 
 # Delete the message
