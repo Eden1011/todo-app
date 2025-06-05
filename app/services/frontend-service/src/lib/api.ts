@@ -75,27 +75,24 @@ class ApiClient {
     private chatClient: AxiosInstance;
 
     constructor() {
-        // Auth service client
+        // Use proxy routes instead of direct service URLs
+        // All requests will go through Next.js rewrites
+
+        // Auth service client - uses proxy route /api/auth
         this.authClient = axios.create({
-            baseURL:
-                process.env.NEXT_PUBLIC_AUTH_SERVICE_URL ||
-                "http://localhost:3000",
+            baseURL: "/api/auth", // This will be rewritten to auth service
             timeout: 10000,
         });
 
-        // DB service client
+        // DB service client - uses proxy route /api/db
         this.dbClient = axios.create({
-            baseURL:
-                process.env.NEXT_PUBLIC_DB_SERVICE_URL ||
-                "http://localhost:4000",
+            baseURL: "/api/db", // This will be rewritten to db service
             timeout: 10000,
         });
 
-        // Chat service client
+        // Chat service client - uses proxy route /api/chat
         this.chatClient = axios.create({
-            baseURL:
-                process.env.NEXT_PUBLIC_CHAT_SERVICE_URL ||
-                "http://localhost:5000",
+            baseURL: "/api/chat", // This will be rewritten to chat service
             timeout: 10000,
         });
 
@@ -160,12 +157,12 @@ class ApiClient {
     }
 
     // ============================================================================
-    // AUTH SERVICE METHODS
+    // AUTH SERVICE METHODS (using proxy routes)
     // ============================================================================
 
     async login(credentials: LoginCredentials): Promise<AuthTokens> {
         const response = await this.authClient.post<ApiResponse<AuthTokens>>(
-            "/local/user/login",
+            "/local/user/login", // This becomes /api/auth/local/user/login
             credentials,
         );
 
@@ -184,7 +181,7 @@ class ApiClient {
     ): Promise<AuthTokens | { message: string }> {
         const response = await this.authClient.post<
             ApiResponse<AuthTokens & { message: string }>
-        >("/local/user/register", credentials);
+        >("/local/user/register", credentials); // This becomes /api/auth/local/user/register
 
         if (response.data.success && response.data.data) {
             // If auto-login is enabled, save tokens
@@ -266,7 +263,7 @@ class ApiClient {
         const response = await this.authClient.post<
             ApiResponse<{ valid: boolean; user: User }>
         >(
-            "/local/token/verify",
+            "/local/token/verify", // This becomes /api/auth/local/token/verify
             {},
             {
                 headers: { Authorization: `Bearer ${token}` },
@@ -305,6 +302,7 @@ class ApiClient {
         if (refreshToken) {
             this.authClient
                 .delete("/local/user/logout", {
+                    // This becomes /api/auth/local/user/logout
                     data: { token: refreshToken },
                 })
                 .catch(console.error);

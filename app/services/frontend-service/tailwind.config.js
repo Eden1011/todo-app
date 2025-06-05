@@ -4,6 +4,9 @@ module.exports = {
         "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+        "./src/contexts/**/*.{js,ts,jsx,tsx,mdx}",
+        "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
+        "./src/hooks/**/*.{js,ts,jsx,tsx,mdx}",
     ],
     theme: {
         extend: {
@@ -19,6 +22,7 @@ module.exports = {
                     700: "#1d4ed8",
                     800: "#1e40af",
                     900: "#1e3a8a",
+                    950: "#172554",
                 },
                 gray: {
                     50: "#f9fafb",
@@ -32,6 +36,9 @@ module.exports = {
                     800: "#1f2937",
                     900: "#111827",
                 },
+            },
+            fontFamily: {
+                sans: ["Inter", "system-ui", "sans-serif"],
             },
             animation: {
                 "fade-in": "fadeIn 0.5s ease-in-out",
