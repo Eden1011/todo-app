@@ -53,7 +53,6 @@ function Projects({ user }) {
                 includeChats: false,
             };
 
-            // Remove empty filters
             Object.keys(params).forEach((key) => {
                 if (params[key] === "" || params[key] === false) {
                     delete params[key];
@@ -150,6 +149,8 @@ function Projects({ user }) {
 
     const handleAddMember = async (e) => {
         e.preventDefault();
+        if (!selectedProject) return;
+        setError(""); // Clear previous errors
 
         try {
             await API.addProjectMember(selectedProject.id, memberForm);
@@ -158,17 +159,21 @@ function Projects({ user }) {
             loadProjectDetails(selectedProject.id);
         } catch (error) {
             console.error("Error adding member:", error);
-            setError("Failed to add member");
+            setError(
+                error.message ||
+                    "Failed to add member. User might not exist or already a member.",
+            );
         }
     };
 
-    const handleRemoveMember = async (memberId) => {
+    const handleRemoveMember = async (memberIdToRemove) => {
+        if (!selectedProject) return;
         if (!confirm("Are you sure you want to remove this member?")) {
             return;
         }
-
+        setError(""); // Clear previous errors
         try {
-            await API.removeProjectMember(selectedProject.id, memberId);
+            await API.removeProjectMember(selectedProject.id, memberIdToRemove);
             loadProjectDetails(selectedProject.id);
         } catch (error) {
             console.error("Error removing member:", error);
@@ -189,6 +194,15 @@ function Projects({ user }) {
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString();
     };
+
+    const isOwner = selectedProject && selectedProject.owner.authId === user.id;
+    const isAdmin =
+        selectedProject &&
+        selectedProject.members.some(
+            (member) =>
+                member.user.authId === user.id && member.role === "ADMIN",
+        );
+    const canManageMembers = isOwner || isAdmin;
 
     return (
         <div className="content">
@@ -464,7 +478,7 @@ function Projects({ user }) {
                                                     >
                                                         {project.owner
                                                             .authId ===
-                                                            user.id && (
+                                                            user.id && ( // Only owner can edit/delete project itself
                                                             <>
                                                                 <button
                                                                     className="btn btn-secondary"
@@ -623,120 +637,213 @@ function Projects({ user }) {
                                 </div>
                             </div>
 
-                            {/* Project Members */}
-                            <div style={{ marginBottom: "2rem" }}>
+                            {/* General Project Members List (Read-Only View) */}
+                            {!canManageMembers &&
+                                selectedProject.members &&
+                                selectedProject.members.length > 0 && (
+                                    <div style={{ marginBottom: "2rem" }}>
+                                        <h4 style={{ marginBottom: "1rem" }}>
+                                            Project Members
+                                        </h4>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "0.5rem",
+                                            }}
+                                        >
+                                            {selectedProject.members.map(
+                                                (member) => (
+                                                    <div
+                                                        key={`info-${member.id}`}
+                                                        style={{
+                                                            display: "flex",
+                                                            justifyContent:
+                                                                "space-between",
+                                                            alignItems:
+                                                                "center",
+                                                            padding: "0.75rem",
+                                                            border: "1px solid #eee",
+                                                            borderRadius: "4px",
+                                                        }}
+                                                    >
+                                                        <div>
+                                                            <span
+                                                                style={{
+                                                                    fontWeight:
+                                                                        "500",
+                                                                }}
+                                                            >
+                                                                User #
+                                                                {
+                                                                    member.user
+                                                                        .authId
+                                                                }
+                                                            </span>
+                                                            <span
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        getRoleColor(
+                                                                            member.role,
+                                                                        ),
+                                                                    color: "white",
+                                                                    padding:
+                                                                        "0.25rem 0.5rem",
+                                                                    borderRadius:
+                                                                        "4px",
+                                                                    fontSize:
+                                                                        "0.75rem",
+                                                                    marginLeft:
+                                                                        "0.5rem",
+                                                                }}
+                                                            >
+                                                                {member.role}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                            {/* Project Admin Panel - Visible only to Owner or Admin */}
+                            {canManageMembers && (
                                 <div
+                                    className="card"
                                     style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        marginBottom: "1rem",
+                                        marginTop: "2rem",
+                                        border: "1px solid #667eea",
                                     }}
                                 >
-                                    <h4>Project Members</h4>
-                                    {(selectedProject.owner.authId ===
-                                        user.id ||
-                                        selectedProject.members.some(
-                                            (m) =>
-                                                m.user.authId === user.id &&
-                                                m.role === "ADMIN",
-                                        )) && (
+                                    <div
+                                        className="card-header"
+                                        style={{
+                                            borderBottom: "1px solid #667eea",
+                                        }}
+                                    >
+                                        <h3
+                                            className="card-title"
+                                            style={{ color: "#667eea" }}
+                                        >
+                                            Project Admin Panel
+                                        </h3>
+                                    </div>
+
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            marginBottom: "1rem",
+                                            paddingTop: "1rem",
+                                        }}
+                                    >
+                                        <h4>Manage Members</h4>
                                         <button
                                             className="btn btn-primary"
                                             style={{
                                                 padding: "0.25rem 0.5rem",
                                                 fontSize: "0.875rem",
                                             }}
-                                            onClick={() =>
-                                                setShowMemberModal(true)
-                                            }
+                                            onClick={() => {
+                                                setMemberForm({
+                                                    memberAuthId: "",
+                                                    role: "MEMBER",
+                                                });
+                                                setShowMemberModal(true);
+                                            }}
                                         >
                                             Add Member
                                         </button>
-                                    )}
-                                </div>
+                                    </div>
 
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "0.5rem",
-                                    }}
-                                >
-                                    {selectedProject.members.map((member) => (
-                                        <div
-                                            key={member.id}
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                padding: "0.75rem",
-                                                border: "1px solid #eee",
-                                                borderRadius: "4px",
-                                            }}
-                                        >
-                                            <div>
-                                                <span
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "0.5rem",
+                                        }}
+                                    >
+                                        {selectedProject.members.map(
+                                            (member) => (
+                                                <div
+                                                    key={`admin-member-${member.id}`}
                                                     style={{
-                                                        fontWeight: "500",
-                                                    }}
-                                                >
-                                                    User #{member.user.authId}
-                                                </span>
-                                                <span
-                                                    style={{
-                                                        backgroundColor:
-                                                            getRoleColor(
-                                                                member.role,
-                                                            ),
-                                                        color: "white",
-                                                        padding:
-                                                            "0.25rem 0.5rem",
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        alignItems: "center",
+                                                        padding: "0.75rem",
+                                                        border: "1px solid #eee",
                                                         borderRadius: "4px",
-                                                        fontSize: "0.75rem",
-                                                        marginLeft: "0.5rem",
                                                     }}
                                                 >
-                                                    {member.role}
-                                                </span>
-                                            </div>
-
-                                            {member.role !== "OWNER" &&
-                                                (selectedProject.owner
-                                                    .authId === user.id ||
-                                                    (selectedProject.members.some(
-                                                        (m) =>
-                                                            m.user.authId ===
-                                                                user.id &&
-                                                            m.role === "ADMIN",
-                                                    ) &&
-                                                        member.role !==
-                                                            "ADMIN")) && (
-                                                    <button
-                                                        className="btn btn-danger"
-                                                        style={{
-                                                            padding:
-                                                                "0.25rem 0.5rem",
-                                                            fontSize: "0.75rem",
-                                                        }}
-                                                        onClick={() =>
-                                                            handleRemoveMember(
-                                                                member.id,
-                                                            )
-                                                        }
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
-                                        </div>
-                                    ))}
+                                                    <div>
+                                                        <span
+                                                            style={{
+                                                                fontWeight:
+                                                                    "500",
+                                                            }}
+                                                        >
+                                                            User #
+                                                            {member.user.authId}
+                                                        </span>
+                                                        <span
+                                                            style={{
+                                                                backgroundColor:
+                                                                    getRoleColor(
+                                                                        member.role,
+                                                                    ),
+                                                                color: "white",
+                                                                padding:
+                                                                    "0.25rem 0.5rem",
+                                                                borderRadius:
+                                                                    "4px",
+                                                                fontSize:
+                                                                    "0.75rem",
+                                                                marginLeft:
+                                                                    "0.5rem",
+                                                            }}
+                                                        >
+                                                            {member.role}
+                                                        </span>
+                                                    </div>
+                                                    {/* Remove button logic: Owner can remove anyone but themselves. 
+                                                    Admin can remove anyone but Owner or other Admins. */}
+                                                    {member.role !== "OWNER" &&
+                                                        (isOwner ||
+                                                            (isAdmin &&
+                                                                member.role !==
+                                                                    "ADMIN")) && (
+                                                            <button
+                                                                className="btn btn-danger"
+                                                                style={{
+                                                                    padding:
+                                                                        "0.25rem 0.5rem",
+                                                                    fontSize:
+                                                                        "0.75rem",
+                                                                }}
+                                                                onClick={() =>
+                                                                    handleRemoveMember(
+                                                                        member.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        )}
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Recent Tasks */}
                             {selectedProject.tasks &&
                                 selectedProject.tasks.length > 0 && (
-                                    <div>
+                                    <div style={{ marginTop: "2rem" }}>
                                         <h4 style={{ marginBottom: "1rem" }}>
                                             Recent Tasks
                                         </h4>
@@ -908,7 +1015,9 @@ function Projects({ user }) {
                                     onChange={(e) =>
                                         handleMemberFormChange(
                                             "memberAuthId",
-                                            parseInt(e.target.value),
+                                            e.target.value
+                                                ? parseInt(e.target.value)
+                                                : "",
                                         )
                                     }
                                     placeholder="Enter user's auth ID"

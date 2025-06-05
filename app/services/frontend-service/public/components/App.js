@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 function App() {
-    const [currentView, setCurrentView] = useState("dashboard");
+    const [currentView, setCurrentView] = useState("tasks"); // Zmieniono na "tasks"
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -19,7 +19,8 @@ function App() {
         try {
             const userData = await API.verifyToken();
             setUser(userData);
-            setCurrentView("dashboard");
+            // Domyślny widok jest już ustawiony na "tasks" w useState
+            // Jeśli użytkownik jest zalogowany, nie zmieniamy już currentView tutaj na siłę
         } catch (error) {
             console.error("Auth check failed:", error);
             AuthUtils.removeToken();
@@ -31,13 +32,13 @@ function App() {
     const handleLogin = (userData, token) => {
         AuthUtils.setToken(token);
         setUser(userData);
-        setCurrentView("dashboard");
+        setCurrentView("tasks"); // Po zalogowaniu przejdź do Tasks
     };
 
     const handleLogout = () => {
         AuthUtils.removeToken();
         setUser(null);
-        setCurrentView("auth");
+        setCurrentView("auth"); // Po wylogowaniu pokaż formularz logowania/rejestracji
     };
 
     if (loading) {
@@ -64,14 +65,7 @@ function App() {
                 <div className="header-content">
                     <div className="logo">Todo App</div>
                     <nav className="nav">
-                        <button
-                            className={
-                                currentView === "dashboard" ? "active" : ""
-                            }
-                            onClick={() => setCurrentView("dashboard")}
-                        >
-                            Dashboard
-                        </button>
+                        {/* Usunięto przycisk Dashboard */}
                         <button
                             className={currentView === "tasks" ? "active" : ""}
                             onClick={() => setCurrentView("tasks")}
@@ -114,7 +108,7 @@ function App() {
             </header>
 
             <main className="main">
-                {currentView === "dashboard" && <Dashboard user={user} />}
+                {/* Usunięto renderowanie Dashboard */}
                 {currentView === "tasks" && <Tasks user={user} />}
                 {currentView === "projects" && <Projects user={user} />}
                 {currentView === "chat" && <Chat user={user} />}

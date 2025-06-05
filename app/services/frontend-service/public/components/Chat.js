@@ -70,7 +70,6 @@ function Chat({ user }) {
             const response = await API.getProjectChats(selectedProject.id);
             setChats(response.data.chats);
 
-            // Try to get or create default chat
             const defaultChatResponse = await API.getOrCreateProjectChat(
                 selectedProject.id,
             );
@@ -129,7 +128,6 @@ function Chat({ user }) {
 
         newSocket.on("joined_project", (data) => {
             console.log("Joined project room:", data);
-            // Get online users
             newSocket.emit("get_online_users", {
                 projectId: selectedProject.id,
             });
@@ -218,14 +216,12 @@ function Chat({ user }) {
         const messageContent = newMessage.trim();
         setNewMessage("");
 
-        // Send via Socket.IO for real-time
         socket.emit("send_message", {
             chatId: selectedChat.id,
             content: messageContent,
             messageType: "text",
         });
 
-        // Stop typing indicator
         if (isTyping) {
             socket.emit("typing_stop", { chatId: selectedChat.id });
             setIsTyping(false);
@@ -237,13 +233,11 @@ function Chat({ user }) {
 
         if (!socket || !selectedChat) return;
 
-        // Start typing indicator
         if (!isTyping) {
             socket.emit("typing_start", { chatId: selectedChat.id });
             setIsTyping(true);
         }
 
-        // Reset typing timeout
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
         }
@@ -294,13 +288,32 @@ function Chat({ user }) {
         return groups;
     };
 
+    const handleRefreshChat = () => {
+        window.location.reload();
+    };
+
     if (loading) {
         return <div className="loading">Loading chat...</div>;
     }
 
     return (
         <div className="content">
-            <h1>Project Chat</h1>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "1rem",
+                }}
+            >
+                <h1>Project Chat</h1>
+                <button
+                    onClick={handleRefreshChat}
+                    className="btn btn-secondary"
+                >
+                    Refresh Chat
+                </button>
+            </div>
 
             {error && <div className="error">{error}</div>}
 

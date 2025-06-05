@@ -5,36 +5,28 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Todo App - Task Management</title>
 
-        <!-- React and ReactDOM -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
 
-        <!-- Babel for JSX transformation -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.5/babel.min.js"></script>
 
-        <!-- Socket.IO for real-time chat -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
 
-        <!-- CSS Styles -->
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
         <div id="root"></div>
 
-        <!-- Include utility modules first -->
         <script type="text/babel" src="utils/auth.js"></script>
         <script type="text/babel" src="utils/api.js"></script>
 
-        <!-- Include all React components -->
         <script type="text/babel" src="components/Auth.js"></script>
-        <script type="text/babel" src="components/Dashboard.js"></script>
         <script type="text/babel" src="components/Tasks.js"></script>
         <script type="text/babel" src="components/Projects.js"></script>
         <script type="text/babel" src="components/Chat.js"></script>
         <script type="text/babel" src="components/Profile.js"></script>
         <script type="text/babel" src="components/App.js"></script>
 
-        <!-- Initialize the app -->
         <script type="text/babel">
             ReactDOM.render(<App />, document.getElementById("root"));
         </script>

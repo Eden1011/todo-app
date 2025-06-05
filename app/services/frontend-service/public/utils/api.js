@@ -117,10 +117,6 @@ const API = {
         return await this.request(`${this.DB_BASE}/api/user/profile`);
     },
 
-    async getUserActivity() {
-        return await this.request(`${this.DB_BASE}/api/user/activity`);
-    },
-
     // DB Service APIs - Tasks
     async getTasks(params = {}) {
         const queryString = new URLSearchParams(params).toString();
@@ -174,24 +170,6 @@ const API = {
                 method: "PUT",
                 body: JSON.stringify({ priority }),
             },
-        );
-    },
-
-    async getTasksDueSoon() {
-        return await this.request(`${this.DB_BASE}/api/task/due/soon`);
-    },
-
-    async getTasksOverdue() {
-        return await this.request(`${this.DB_BASE}/api/task/due/overdue`);
-    },
-
-    async getStatusStatistics() {
-        return await this.request(`${this.DB_BASE}/api/task/statistics/status`);
-    },
-
-    async getPriorityStatistics() {
-        return await this.request(
-            `${this.DB_BASE}/api/task/statistics/priority`,
         );
     },
 
@@ -263,7 +241,6 @@ const API = {
         return await this.request(`${this.DB_BASE}/api/project/${id}/chat`);
     },
 
-    // DB Service APIs - Categories
     async getCategories() {
         return await this.request(`${this.DB_BASE}/api/category`);
     },
@@ -275,81 +252,14 @@ const API = {
         });
     },
 
-    async deleteCategory(id) {
-        try {
-            return await this.request(`${this.DB_BASE}/api/category/${id}`, {
-                method: "DELETE",
-            });
-        } catch (error) {
-            if (error.status !== 204 && error.status !== 200) {
-                throw error;
-            }
-            return null;
-        }
-    },
-
-    // DB Service APIs - Tags
     async getTags() {
         return await this.request(`${this.DB_BASE}/api/tag`);
     },
-
     async createTag(tagData) {
         return await this.request(`${this.DB_BASE}/api/tag`, {
             method: "POST",
             body: JSON.stringify(tagData),
         });
-    },
-
-    async deleteTag(id) {
-        try {
-            return await this.request(`${this.DB_BASE}/api/tag/${id}`, {
-                method: "DELETE",
-            });
-        } catch (error) {
-            if (error.status !== 204 && error.status !== 200) {
-                throw error;
-            }
-            return null;
-        }
-    },
-
-    // DB Service APIs - Notifications
-    async getNotifications(params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        return await this.request(
-            `${this.DB_BASE}/api/notification?${queryString}`,
-        );
-    },
-
-    async markNotificationAsRead(id) {
-        return await this.request(
-            `${this.DB_BASE}/api/notification/${id}/read`,
-            {
-                method: "PUT",
-            },
-        );
-    },
-
-    async markAllNotificationsAsRead() {
-        return await this.request(`${this.DB_BASE}/api/notification/read/all`, {
-            method: "PUT",
-        });
-    },
-
-    async deleteNotification(id) {
-        try {
-            return await this.request(
-                `${this.DB_BASE}/api/notification/${id}`,
-                {
-                    method: "DELETE",
-                },
-            );
-        } catch (error) {
-            if (error.status !== 204 && error.status !== 200) {
-                throw error;
-            }
-            return null;
-        }
     },
 
     // Chat Service APIs

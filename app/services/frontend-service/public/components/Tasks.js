@@ -16,7 +16,7 @@ function Tasks({ user }) {
         priority: "",
         projectId: "",
         assignedToMe: false,
-        search: "",
+        // Usunięto 'search' z filtrów
         sortBy: "updatedAt",
         sortOrder: "desc",
     });
@@ -65,6 +65,8 @@ function Tasks({ user }) {
                     delete params[key];
                 }
             });
+            // Upewnij się, że parametr 'search' nie jest wysyłany, jeśli został usunięty z filtrów
+            delete params.search;
 
             const response = await API.getTasks(params);
             setTasks(response.data.tasks);
@@ -91,6 +93,7 @@ function Tasks({ user }) {
     };
 
     const loadCategories = async () => {
+        // Zostawione na wypadek gdyby formularz dodawania/edycji zadań nadal ich używał
         try {
             const response = await API.getCategories();
             setCategories(response.data.categories);
@@ -100,6 +103,7 @@ function Tasks({ user }) {
     };
 
     const loadTags = async () => {
+        // Zostawione na wypadek gdyby formularz dodawania/edycji zadań nadal ich używał
         try {
             const response = await API.getTags();
             setTags(response.data.tags);
@@ -263,17 +267,7 @@ function Tasks({ user }) {
 
             {/* Filters */}
             <div className="filters">
-                <div className="filter-group">
-                    <label>Search</label>
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) =>
-                            handleFilterChange("search", e.target.value)
-                        }
-                        placeholder="Search tasks..."
-                    />
-                </div>
+                {/* Usunięto grupę filtra dla Search */}
 
                 <div className="filter-group">
                     <label>Status</label>
