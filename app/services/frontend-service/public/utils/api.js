@@ -6,7 +6,7 @@ const API = {
 
     // Helper function to make requests with auth headers
     async request(url, options = {}) {
-        const token = AuthUtils.getToken();
+        const token = AuthUtils.getToken(); // Assumes AuthUtils is available globally or imported
         const headers = {
             "Content-Type": "application/json",
             ...options.headers,
@@ -22,10 +22,35 @@ const API = {
         });
 
         if (!response.ok) {
-            const errorData = await response
-                .json()
-                .catch(() => ({ error: "Network error" }));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
+            let errorData = {
+                error: `HTTP ${response.status} ${response.statusText || "Error"}`,
+                details: [],
+            };
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                // If response is not JSON, use the text or a generic error
+                try {
+                    const errorText = await response.text();
+                    errorData.error = errorText || errorData.error;
+                } catch (textErr) {
+                    // Fallback if text() also fails
+                }
+            }
+
+            console.error("API Error Data from server:", errorData); // Log the full error data
+
+            const err = new Error(
+                errorData.error || `HTTP error ${response.status}`,
+            );
+            err.details = errorData.details || []; // Attach details array
+            err.status = response.status; // Attach status code
+            throw err;
+        }
+
+        // Handle cases where response might be empty (e.g., 204 No Content)
+        if (response.status === 204) {
+            return null;
         }
 
         return await response.json();
@@ -53,7 +78,7 @@ const API = {
                 method: "POST",
             },
         );
-        return response.data.user;
+        return response.data.user; // Assuming verifyToken response structure
     },
 
     async refreshToken() {
@@ -71,10 +96,19 @@ const API = {
     async logout() {
         const refreshToken = localStorage.getItem("refresh_token");
         if (refreshToken) {
-            await this.request(`${this.AUTH_BASE}/local/user/logout`, {
-                method: "DELETE",
-                body: JSON.stringify({ token: refreshToken }),
-            });
+            // Logout might not return JSON, handle gracefully
+            try {
+                await this.request(`${this.AUTH_BASE}/local/user/logout`, {
+                    method: "DELETE",
+                    body: JSON.stringify({ token: refreshToken }),
+                });
+            } catch (error) {
+                // If it's a 204 or similar, it might throw due to no JSON body.
+                // Consider how your logout endpoint responds.
+                if (error.status !== 204) {
+                    throw error;
+                }
+            }
         }
     },
 
@@ -112,9 +146,18 @@ const API = {
     },
 
     async deleteTask(id) {
-        return await this.request(`${this.DB_BASE}/api/task/${id}`, {
-            method: "DELETE",
-        });
+        // DELETE might return 204 No Content
+        try {
+            return await this.request(`${this.DB_BASE}/api/task/${id}`, {
+                method: "DELETE",
+            });
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                // Some DELETE might return 200 with a message
+                throw error;
+            }
+            return null; // Or a success object like { success: true } if needed
+        }
     },
 
     async updateTaskStatus(taskId, status) {
@@ -177,9 +220,17 @@ const API = {
     },
 
     async deleteProject(id) {
-        return await this.request(`${this.DB_BASE}/api/project/${id}`, {
-            method: "DELETE",
-        });
+        // DELETE might return 204 No Content
+        try {
+            return await this.request(`${this.DB_BASE}/api/project/${id}`, {
+                method: "DELETE",
+            });
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     async addProjectMember(projectId, memberData) {
@@ -193,12 +244,19 @@ const API = {
     },
 
     async removeProjectMember(projectId, memberId) {
-        return await this.request(
-            `${this.DB_BASE}/api/project/${projectId}/members/${memberId}`,
-            {
-                method: "DELETE",
-            },
-        );
+        try {
+            return await this.request(
+                `${this.DB_BASE}/api/project/${projectId}/members/${memberId}`,
+                {
+                    method: "DELETE",
+                },
+            );
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     async getProjectChatInfo(id) {
@@ -218,9 +276,16 @@ const API = {
     },
 
     async deleteCategory(id) {
-        return await this.request(`${this.DB_BASE}/api/category/${id}`, {
-            method: "DELETE",
-        });
+        try {
+            return await this.request(`${this.DB_BASE}/api/category/${id}`, {
+                method: "DELETE",
+            });
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     // DB Service APIs - Tags
@@ -236,9 +301,16 @@ const API = {
     },
 
     async deleteTag(id) {
-        return await this.request(`${this.DB_BASE}/api/tag/${id}`, {
-            method: "DELETE",
-        });
+        try {
+            return await this.request(`${this.DB_BASE}/api/tag/${id}`, {
+                method: "DELETE",
+            });
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     // DB Service APIs - Notifications
@@ -265,9 +337,19 @@ const API = {
     },
 
     async deleteNotification(id) {
-        return await this.request(`${this.DB_BASE}/api/notification/${id}`, {
-            method: "DELETE",
-        });
+        try {
+            return await this.request(
+                `${this.DB_BASE}/api/notification/${id}`,
+                {
+                    method: "DELETE",
+                },
+            );
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     // Chat Service APIs
@@ -327,12 +409,19 @@ const API = {
     },
 
     async deleteMessage(messageId) {
-        return await this.request(
-            `${this.CHAT_BASE}/api/messages/${messageId}`,
-            {
-                method: "DELETE",
-            },
-        );
+        try {
+            return await this.request(
+                `${this.CHAT_BASE}/api/messages/${messageId}`,
+                {
+                    method: "DELETE",
+                },
+            );
+        } catch (error) {
+            if (error.status !== 204 && error.status !== 200) {
+                throw error;
+            }
+            return null;
+        }
     },
 
     async searchMessages(chatId, query) {

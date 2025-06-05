@@ -17,31 +17,91 @@ async function createTask(req, res) {
             priority = "MEDIUM",
             status = "TODO",
             dueDate,
-            assigneeAuthId,
-            projectId,
-            categoryIds = [],
-            tagIds = [],
         } = req.body;
 
-        if (!title) {
+        // Explicitly handle potentially stringified arrays and other IDs from body
+        let categoryIdsReq = req.body.categoryIds;
+        let tagIdsReq = req.body.tagIds;
+        let projectIdFromBody = req.body.projectId;
+        let assigneeAuthIdFromBody = req.body.assigneeAuthId;
+
+        if (!title || title.trim() === "") {
+            // Ensure title is not just whitespace
             return res.status(400).json({
                 success: false,
-                error: "Title is required",
+                error: "Title is required and cannot be empty.",
             });
         }
 
-        // Validate assignee if provided
+        // Process categoryIds
+        let finalCategoryIds = [];
+        if (categoryIdsReq) {
+            if (typeof categoryIdsReq === "string") {
+                try {
+                    categoryIdsReq = JSON.parse(categoryIdsReq);
+                } catch (e) {
+                    categoryIdsReq = [];
+                }
+            }
+            if (Array.isArray(categoryIdsReq)) {
+                finalCategoryIds = categoryIdsReq
+                    .map((id) => parseInt(id, 10))
+                    .filter((id) => !isNaN(id) && id > 0);
+            }
+        }
+
+        // Process tagIds
+        let finalTagIds = [];
+        if (tagIdsReq) {
+            if (typeof tagIdsReq === "string") {
+                try {
+                    tagIdsReq = JSON.parse(tagIdsReq);
+                } catch (e) {
+                    tagIdsReq = [];
+                }
+            }
+            if (Array.isArray(tagIdsReq)) {
+                finalTagIds = tagIdsReq
+                    .map((id) => parseInt(id, 10))
+                    .filter((id) => !isNaN(id) && id > 0);
+            }
+        }
+
         let assigneeId = null;
-        if (assigneeAuthId) {
-            const assignee = await getOrCreateUser(assigneeAuthId);
+        if (
+            assigneeAuthIdFromBody !== undefined &&
+            assigneeAuthIdFromBody !== null &&
+            assigneeAuthIdFromBody !== ""
+        ) {
+            const parsedAssigneeAuthId = parseInt(assigneeAuthIdFromBody, 10);
+            if (isNaN(parsedAssigneeAuthId) || parsedAssigneeAuthId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Assignee Auth ID must be a positive integer.",
+                });
+            }
+            const assignee = await getOrCreateUser(parsedAssigneeAuthId);
             assigneeId = assignee.id;
         }
 
-        // Validate project ownership/membership if provided
-        if (projectId) {
+        let finalProjectId = null;
+        if (
+            projectIdFromBody !== undefined &&
+            projectIdFromBody !== null &&
+            projectIdFromBody !== ""
+        ) {
+            finalProjectId = parseInt(projectIdFromBody, 10);
+            if (isNaN(finalProjectId) || finalProjectId <= 0) {
+                // Check if positive
+                return res.status(400).json({
+                    success: false,
+                    error: "Project ID must be a positive integer.",
+                });
+            }
+
             const project = await prisma.project.findFirst({
                 where: {
-                    id: projectId,
+                    id: finalProjectId,
                     OR: [
                         { ownerId: user.id },
                         { members: { some: { userId: user.id } } },
@@ -52,29 +112,29 @@ async function createTask(req, res) {
             if (!project) {
                 return res.status(403).json({
                     success: false,
-                    error: "You don't have access to this project",
+                    error: "You don't have access to this project or project does not exist.",
                 });
             }
         }
 
         const task = await prisma.task.create({
             data: {
-                title,
-                description,
+                title: title.trim(),
+                description: description ? description.trim() : null,
                 priority,
                 status,
                 dueDate: dueDate ? new Date(dueDate) : null,
                 ownerId: user.id,
                 assigneeId,
-                projectId,
+                projectId: finalProjectId,
                 categories: {
-                    create: categoryIds.map((categoryId) => ({
-                        category: { connect: { id: categoryId } },
+                    create: finalCategoryIds.map((catId) => ({
+                        category: { connect: { id: catId } },
                     })),
                 },
                 tags: {
-                    create: tagIds.map((tagId) => ({
-                        tag: { connect: { id: tagId } },
+                    create: finalTagIds.map((tagIdValue) => ({
+                        tag: { connect: { id: tagIdValue } },
                     })),
                 },
             },
@@ -84,12 +144,14 @@ async function createTask(req, res) {
                 project: { select: { id: true, name: true } },
                 categories: {
                     include: {
-                        category: { select: { id: true, name: true } },
+                        category: {
+                            select: { id: true, name: true, color: true },
+                        },
                     },
                 },
                 tags: {
                     include: {
-                        tag: { select: { id: true, name: true } },
+                        tag: { select: { id: true, name: true, color: true } },
                     },
                 },
             },
@@ -100,73 +162,120 @@ async function createTask(req, res) {
             data: task,
         });
     } catch (error) {
+        console.error("Error in createTask controller:", error);
+        // Check if it's a Prisma known request error for more specific messages
+        if (error.code && error.meta) {
+            // Basic check for Prisma error structure
+            return res.status(400).json({
+                // Or appropriate status code
+                success: false,
+                error: "Database operation failed.",
+                details: error.meta.target || error.message, // Or more specific parsing of error.meta
+            });
+        }
         res.status(500).json({
             success: false,
-            error: error.message,
+            error: error.message || "Internal server error",
         });
     }
 }
 
-/**
- * Get tasks with filtering and pagination
- */
 async function getTasks(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
 
         const {
-            page = 1,
-            limit = 20,
             status,
             priority,
-            projectId,
-            assignedToMe,
             search,
             sortBy = "updatedAt",
             sortOrder = "desc",
-            categoryId,
-            tagId,
             dueDateFrom,
             dueDateTo,
         } = req.query;
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const take = parseInt(limit);
+        let page = parseInt(req.query.page, 10) || 1;
+        let limit = parseInt(req.query.limit, 10) || 20;
+        if (limit > 100) limit = 100; // Max limit
+        if (page < 1) page = 1;
 
-        // Build where clause
+        let projectId = req.query.projectId;
+        let categoryId = req.query.categoryId;
+        let tagId = req.query.tagId;
+        let assignedToMeQuery = req.query.assignedToMe;
+
+        const skip = (page - 1) * limit;
+        const take = limit;
+
         const where = {
             OR: [{ ownerId: user.id }, { assigneeId: user.id }],
         };
 
-        // Apply filters
         if (status) where.status = status;
         if (priority) where.priority = priority;
-        if (projectId) where.projectId = parseInt(projectId);
-        if (assignedToMe === "true") where.assigneeId = user.id;
-        if (categoryId) {
-            where.categories = {
-                some: { categoryId: parseInt(categoryId) },
-            };
+
+        if (projectId && projectId !== "") {
+            const parsedProjectId = parseInt(projectId, 10);
+            if (!isNaN(parsedProjectId) && parsedProjectId > 0) {
+                where.projectId = parsedProjectId;
+            }
         }
-        if (tagId) {
-            where.tags = {
-                some: { tagId: parseInt(tagId) },
-            };
+
+        if (assignedToMeQuery === "true") {
+            where.assigneeId = user.id;
+        } else if (assignedToMeQuery === "false") {
+            // This might mean tasks not assigned to the user, or all tasks if not specified.
+            // Current OR logic already covers tasks owned by user OR assigned to user.
+            // If "false" truly means "not assigned to me at all", the OR condition needs adjustment.
+            // For now, assuming "false" or absence of "assignedToMe" doesn't add further assignee restriction beyond the main OR.
+        }
+
+        if (categoryId && categoryId !== "") {
+            const parsedCategoryId = parseInt(categoryId, 10);
+            if (!isNaN(parsedCategoryId) && parsedCategoryId > 0) {
+                where.categories = {
+                    some: { categoryId: parsedCategoryId },
+                };
+            }
+        }
+        if (tagId && tagId !== "") {
+            const parsedTagId = parseInt(tagId, 10);
+            if (!isNaN(parsedTagId) && parsedTagId > 0) {
+                where.tags = {
+                    some: { tagId: parsedTagId },
+                };
+            }
         }
         if (dueDateFrom || dueDateTo) {
             where.dueDate = {};
-            if (dueDateFrom) where.dueDate.gte = new Date(dueDateFrom);
-            if (dueDateTo) where.dueDate.lte = new Date(dueDateTo);
-        }
-        if (search) {
-            where.OR = [
-                { title: { contains: search } },
-                { description: { contains: search } },
-            ];
+            if (dueDateFrom) {
+                const dateFrom = new Date(dueDateFrom);
+                if (!isNaN(dateFrom)) where.dueDate.gte = dateFrom;
+            }
+            if (dueDateTo) {
+                const dateTo = new Date(dueDateTo);
+                if (!isNaN(dateTo)) where.dueDate.lte = dateTo;
+            }
         }
 
-        // Get tasks and total count
+        if (search) {
+            const searchCondition = {
+                OR: [
+                    { title: { contains: search, mode: "insensitive" } },
+                    { description: { contains: search, mode: "insensitive" } },
+                ],
+            };
+            // If where.OR already exists, combine with AND
+            if (where.OR) {
+                where.AND = where.AND
+                    ? [...where.AND, searchCondition]
+                    : [searchCondition];
+            } else {
+                where.OR = searchCondition.OR;
+            }
+        }
+
         const [tasks, total] = await Promise.all([
             prisma.task.findMany({
                 where,
@@ -179,12 +288,16 @@ async function getTasks(req, res) {
                     project: { select: { id: true, name: true } },
                     categories: {
                         include: {
-                            category: { select: { id: true, name: true } },
+                            category: {
+                                select: { id: true, name: true, color: true },
+                            },
                         },
                     },
                     tags: {
                         include: {
-                            tag: { select: { id: true, name: true } },
+                            tag: {
+                                select: { id: true, name: true, color: true },
+                            },
                         },
                     },
                 },
@@ -197,14 +310,15 @@ async function getTasks(req, res) {
             data: {
                 tasks,
                 pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
+                    page: page,
+                    limit: limit,
                     total,
-                    totalPages: Math.ceil(total / parseInt(limit)),
+                    totalPages: Math.ceil(total / limit),
                 },
             },
         });
     } catch (error) {
+        console.error("Error in getTasks controller:", error);
         res.status(500).json({
             success: false,
             error: error.message,
@@ -212,14 +326,20 @@ async function getTasks(req, res) {
     }
 }
 
-/**
- * Get task by ID
- */
 async function getTaskById(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const taskId = parseInt(req.params.id);
+        const taskId = parseInt(req.params.id, 10);
+
+        if (isNaN(taskId) || taskId <= 0) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    error: "Task ID must be a positive integer.",
+                });
+        }
 
         const task = await prisma.task.findFirst({
             where: {
@@ -232,12 +352,14 @@ async function getTaskById(req, res) {
                 project: { select: { id: true, name: true } },
                 categories: {
                     include: {
-                        category: { select: { id: true, name: true } },
+                        category: {
+                            select: { id: true, name: true, color: true },
+                        },
                     },
                 },
                 tags: {
                     include: {
-                        tag: { select: { id: true, name: true } },
+                        tag: { select: { id: true, name: true, color: true } },
                     },
                 },
             },
@@ -255,6 +377,7 @@ async function getTaskById(req, res) {
             data: task,
         });
     } catch (error) {
+        console.error("Error in getTaskById controller:", error);
         res.status(500).json({
             success: false,
             error: error.message,
@@ -262,32 +385,36 @@ async function getTaskById(req, res) {
     }
 }
 
-/**
- * Update task
- */
 async function updateTask(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const taskId = parseInt(req.params.id);
+        const taskId = parseInt(req.params.id, 10);
 
-        const {
-            title,
-            description,
-            priority,
-            status,
-            dueDate,
-            assigneeAuthId,
-            projectId,
-            categoryIds,
-            tagIds,
-        } = req.body;
+        if (isNaN(taskId) || taskId <= 0) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    error: "Task ID must be a positive integer.",
+                });
+        }
 
-        // Check if user has access to task
+        const { title, description, priority, status, dueDate } = req.body;
+
+        let categoryIdsReq = req.body.categoryIds;
+        let tagIdsReq = req.body.tagIds;
+        let assigneeAuthIdFromBody = req.body.assigneeAuthId;
+        let projectIdFromBody = req.body.projectId;
+
         const existingTask = await prisma.task.findFirst({
             where: {
                 id: taskId,
                 OR: [{ ownerId: user.id }, { assigneeId: user.id }],
+            },
+            include: {
+                // Include current assignee to check if it changed
+                assignee: { select: { authId: true } },
             },
         });
 
@@ -298,107 +425,211 @@ async function updateTask(req, res) {
             });
         }
 
-        // Only owner can modify certain fields
         const isOwner = existingTask.ownerId === user.id;
-        const updateData = {};
+        const updateData = { updatedAt: new Date() };
 
-        if (title !== undefined) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
+        if (title !== undefined) updateData.title = title.trim();
+        if (description !== undefined)
+            updateData.description = description ? description.trim() : null;
         if (dueDate !== undefined)
             updateData.dueDate = dueDate ? new Date(dueDate) : null;
-
-        // Status can be updated by owner or assignee
         if (status !== undefined) updateData.status = status;
 
-        // Owner-only fields
         if (isOwner) {
             if (priority !== undefined) updateData.priority = priority;
-            if (projectId !== undefined) updateData.projectId = projectId;
 
-            if (assigneeAuthId !== undefined) {
-                if (assigneeAuthId) {
-                    const assignee = await getOrCreateUser(assigneeAuthId);
-                    updateData.assigneeId = assignee.id;
+            if (projectIdFromBody !== undefined) {
+                if (projectIdFromBody === null || projectIdFromBody === "") {
+                    updateData.projectId = null;
                 } else {
+                    const parsedProjectId = parseInt(projectIdFromBody, 10);
+                    if (isNaN(parsedProjectId) || parsedProjectId <= 0) {
+                        return res
+                            .status(400)
+                            .json({
+                                success: false,
+                                error: "Project ID must be a positive integer or null.",
+                            });
+                    }
+                    // TODO: Add validation for project existence and user access if changing project
+                    updateData.projectId = parsedProjectId;
+                }
+            }
+
+            if (assigneeAuthIdFromBody !== undefined) {
+                if (
+                    assigneeAuthIdFromBody === null ||
+                    assigneeAuthIdFromBody === ""
+                ) {
                     updateData.assigneeId = null;
+                } else {
+                    const parsedAssigneeAuthId = parseInt(
+                        assigneeAuthIdFromBody,
+                        10,
+                    );
+                    if (
+                        isNaN(parsedAssigneeAuthId) ||
+                        parsedAssigneeAuthId <= 0
+                    ) {
+                        return res
+                            .status(400)
+                            .json({
+                                success: false,
+                                error: "Assignee Auth ID must be a positive integer or null.",
+                            });
+                    }
+                    const assignee =
+                        await getOrCreateUser(parsedAssigneeAuthId);
+                    updateData.assigneeId = assignee.id;
+                }
+            }
+        } else {
+            // Not the owner, more restricted updates
+            if (priority !== undefined && priority !== existingTask.priority) {
+                return res
+                    .status(403)
+                    .json({
+                        success: false,
+                        error: "Only owner can change priority",
+                    });
+            }
+            if (
+                projectIdFromBody !== undefined &&
+                projectIdFromBody !== existingTask.projectId &&
+                projectIdFromBody !== null &&
+                existingTask.projectId !== null &&
+                parseInt(projectIdFromBody, 10) !== existingTask.projectId
+            ) {
+                return res
+                    .status(403)
+                    .json({
+                        success: false,
+                        error: "Only owner can change project",
+                    });
+            }
+            if (assigneeAuthIdFromBody !== undefined) {
+                const currentAssigneeAuthId = existingTask.assignee
+                    ? existingTask.assignee.authId
+                    : null;
+                const newAssigneeAuthId =
+                    assigneeAuthIdFromBody === null ||
+                    assigneeAuthIdFromBody === ""
+                        ? null
+                        : parseInt(assigneeAuthIdFromBody, 10);
+                if (newAssigneeAuthId !== currentAssigneeAuthId) {
+                    return res
+                        .status(403)
+                        .json({
+                            success: false,
+                            error: "Only owner can change assignee",
+                        });
                 }
             }
         }
 
-        const task = await prisma.task.update({
+        await prisma.task.update({
             where: { id: taskId },
             data: updateData,
+        });
+
+        // Handle categories and tags (owner only or based on specific project permissions if implemented)
+        if (isOwner) {
+            if (categoryIdsReq !== undefined) {
+                let finalCategoryIds = [];
+                if (typeof categoryIdsReq === "string") {
+                    try {
+                        categoryIdsReq = JSON.parse(categoryIdsReq);
+                    } catch (e) {
+                        categoryIdsReq = [];
+                    }
+                }
+                if (Array.isArray(categoryIdsReq)) {
+                    finalCategoryIds = categoryIdsReq
+                        .map((id) => parseInt(id, 10))
+                        .filter((id) => !isNaN(id) && id > 0);
+                }
+                await prisma.categoryOnTask.deleteMany({ where: { taskId } });
+                if (finalCategoryIds.length > 0) {
+                    await prisma.categoryOnTask.createMany({
+                        data: finalCategoryIds.map((categoryId) => ({
+                            taskId,
+                            categoryId,
+                        })),
+                    });
+                }
+            }
+            if (tagIdsReq !== undefined) {
+                let finalTagIds = [];
+                if (typeof tagIdsReq === "string") {
+                    try {
+                        tagIdsReq = JSON.parse(tagIdsReq);
+                    } catch (e) {
+                        tagIdsReq = [];
+                    }
+                }
+                if (Array.isArray(tagIdsReq)) {
+                    finalTagIds = tagIdsReq
+                        .map((id) => parseInt(id, 10))
+                        .filter((id) => !isNaN(id) && id > 0);
+                }
+                await prisma.tagOnTask.deleteMany({ where: { taskId } });
+                if (finalTagIds.length > 0) {
+                    await prisma.tagOnTask.createMany({
+                        data: finalTagIds.map((tagId) => ({ taskId, tagId })),
+                    });
+                }
+            }
+        }
+
+        const taskWithIncludes = await prisma.task.findUnique({
+            where: { id: taskId },
             include: {
                 owner: { select: { id: true, authId: true } },
                 assignee: { select: { id: true, authId: true } },
                 project: { select: { id: true, name: true } },
                 categories: {
                     include: {
-                        category: { select: { id: true, name: true } },
+                        category: {
+                            select: { id: true, name: true, color: true },
+                        },
                     },
                 },
                 tags: {
                     include: {
-                        tag: { select: { id: true, name: true } },
+                        tag: { select: { id: true, name: true, color: true } },
                     },
                 },
             },
         });
 
-        // Update categories if provided (owner only)
-        if (isOwner && categoryIds !== undefined) {
-            await prisma.categoryOnTask.deleteMany({
-                where: { taskId },
-            });
-
-            if (categoryIds.length > 0) {
-                await prisma.categoryOnTask.createMany({
-                    data: categoryIds.map((categoryId) => ({
-                        taskId,
-                        categoryId,
-                    })),
-                });
-            }
-        }
-
-        // Update tags if provided (owner only)
-        if (isOwner && tagIds !== undefined) {
-            await prisma.tagOnTask.deleteMany({
-                where: { taskId },
-            });
-
-            if (tagIds.length > 0) {
-                await prisma.tagOnTask.createMany({
-                    data: tagIds.map((tagId) => ({
-                        taskId,
-                        tagId,
-                    })),
-                });
-            }
-        }
-
         res.json({
             success: true,
-            data: task,
+            data: taskWithIncludes,
         });
     } catch (error) {
-        res.status(500).json({
+        console.error("Error in updateTask controller:", error);
+        res.status(error.statusCode || 500).json({
             success: false,
             error: error.message,
         });
     }
 }
 
-/**
- * Delete task
- */
 async function deleteTask(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const taskId = parseInt(req.params.id);
+        const taskId = parseInt(req.params.id, 10);
 
-        // Check if user owns the task
+        if (isNaN(taskId) || taskId <= 0) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    error: "Task ID must be a positive integer.",
+                });
+        }
+
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -413,17 +644,23 @@ async function deleteTask(req, res) {
             });
         }
 
-        await prisma.task.delete({
-            where: { id: taskId },
-        });
+        await prisma.$transaction([
+            prisma.categoryOnTask.deleteMany({ where: { taskId: taskId } }),
+            prisma.tagOnTask.deleteMany({ where: { taskId: taskId } }),
+            // Consider other related data like notifications, comments if they exist
+            // await prisma.notification.deleteMany({ where: { relatedTaskId: taskId } }),
+            prisma.task.delete({ where: { id: taskId } }),
+        ]);
 
-        res.json({
+        res.status(200).json({
+            // Or 204 No Content if you prefer, but 200 with message is also common
             success: true,
             data: {
                 message: "Task deleted successfully",
             },
         });
     } catch (error) {
+        console.error("Error in deleteTask controller:", error);
         res.status(500).json({
             success: false,
             error: error.message,
@@ -431,17 +668,21 @@ async function deleteTask(req, res) {
     }
 }
 
-/**
- * Assign task to user
- */
 async function assignTask(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const taskId = parseInt(req.params.id);
+        const taskId = parseInt(req.params.id, 10);
+        if (isNaN(taskId) || taskId <= 0) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    error: "Task ID must be a positive integer.",
+                });
+        }
         const { assigneeAuthId } = req.body;
 
-        // Check if user owns the task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -456,15 +697,28 @@ async function assignTask(req, res) {
             });
         }
 
-        let assigneeId = null;
-        if (assigneeAuthId) {
-            const assignee = await getOrCreateUser(assigneeAuthId);
-            assigneeId = assignee.id;
+        let assigneeIdToSet = null;
+        if (
+            assigneeAuthId !== null &&
+            assigneeAuthId !== undefined &&
+            assigneeAuthId !== ""
+        ) {
+            const parsedAssigneeAuthId = parseInt(assigneeAuthId, 10);
+            if (isNaN(parsedAssigneeAuthId) || parsedAssigneeAuthId <= 0) {
+                return res
+                    .status(400)
+                    .json({
+                        success: false,
+                        error: "Assignee Auth ID must be a positive integer or null.",
+                    });
+            }
+            const assignee = await getOrCreateUser(parsedAssigneeAuthId);
+            assigneeIdToSet = assignee.id;
         }
 
         const updatedTask = await prisma.task.update({
             where: { id: taskId },
-            data: { assigneeId },
+            data: { assigneeId: assigneeIdToSet, updatedAt: new Date() },
             include: {
                 owner: { select: { id: true, authId: true } },
                 assignee: { select: { id: true, authId: true } },
@@ -477,6 +731,7 @@ async function assignTask(req, res) {
             data: updatedTask,
         });
     } catch (error) {
+        console.error("Error in assignTask controller:", error);
         res.status(500).json({
             success: false,
             error: error.message,

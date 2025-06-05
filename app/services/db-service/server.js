@@ -2,10 +2,19 @@ require("dotenv").config();
 
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 const { errorHandler, notFound } = require("./middleware/error.handler.js");
 const { authenticateToken } = require("./middleware/db.auth-token.js");
 
 const app = express();
+
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN_FRONTEND || "http://localhost:3001",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("dev"));

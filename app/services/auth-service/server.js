@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 const {
     errorHandler,
     notFound,
@@ -18,7 +19,13 @@ const oauth = {
 };
 
 const app = express();
-
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN || "http://localhost:3001",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(passport.initialize());
 app.use(morgan("dev"));
