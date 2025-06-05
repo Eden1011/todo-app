@@ -570,10 +570,10 @@ export default function CategoriesPage() {
                                 variant="danger"
                                 onClick={handleDeleteCategory}
                                 isLoading={isSubmitting}
-                                disabled={
+                                disabled={Boolean(
                                     selectedCategory?._count?.tasks &&
-                                    selectedCategory._count.tasks > 0
-                                }
+                                        selectedCategory._count.tasks > 0,
+                                )}
                             >
                                 Delete Category
                             </Button>
@@ -762,10 +762,10 @@ function CategoryCard({ category, onEdit, onDelete }: CategoryCardProps) {
                                         setShowActions(false);
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                                    disabled={
+                                    disabled={Boolean(
                                         category._count?.tasks &&
-                                        category._count.tasks > 0
-                                    }
+                                            category._count.tasks > 0,
+                                    )}
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete

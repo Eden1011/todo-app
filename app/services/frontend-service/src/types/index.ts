@@ -243,7 +243,7 @@ export interface Notification {
     };
 }
 
-// API Response types
+// API Response types (FIXED)
 export interface ApiResponse<T = any> {
     success: boolean;
     data?: T;
@@ -253,8 +253,7 @@ export interface ApiResponse<T = any> {
 
 export interface PaginatedResponse<T = any> {
     success: boolean;
-    data: {
-        [key: string]: T[];
+    data: Record<string, any> & {
         pagination: {
             page: number;
             limit: number;
@@ -264,6 +263,8 @@ export interface PaginatedResponse<T = any> {
             hasPrevPage?: boolean;
         };
     };
+    error?: string;
+    details?: any;
 }
 
 // Filter and search types

@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        appDir: true,
-    },
-    // Server-side environment variables for rewrites
     env: {
         AUTH_SERVICE_URL:
             process.env.AUTH_SERVICE_URL || "http://localhost:3000",

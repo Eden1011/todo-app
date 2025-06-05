@@ -143,7 +143,8 @@ export default function SearchPage() {
                         search: searchQuery,
                         limit: 10,
                     });
-                    tasks.tasks.forEach((task) => {
+                    // FIXED: Add explicit typing and null checking
+                    tasks.tasks?.forEach((task: Task) => {
                         searchResults.push({
                             type: "task",
                             id: task.id,
@@ -179,7 +180,8 @@ export default function SearchPage() {
                         search: searchQuery,
                         limit: 10,
                     });
-                    projects.projects.forEach((project) => {
+                    // FIXED: Add explicit typing and null checking
+                    projects.projects?.forEach((project: Project) => {
                         searchResults.push({
                             type: "project",
                             id: project.id,
@@ -212,7 +214,8 @@ export default function SearchPage() {
                     const categories = await apiClient.getCategories({
                         search: searchQuery,
                     });
-                    categories.forEach((category) => {
+                    // FIXED: Add explicit typing
+                    categories.forEach((category: Category) => {
                         searchResults.push({
                             type: "category",
                             id: category.id,
@@ -240,7 +243,8 @@ export default function SearchPage() {
                     const tags = await apiClient.getTags({
                         search: searchQuery,
                     });
-                    tags.forEach((tag) => {
+                    // FIXED: Add explicit typing
+                    tags.forEach((tag: Tag) => {
                         searchResults.push({
                             type: "tag",
                             id: tag.id,
@@ -329,8 +333,9 @@ export default function SearchPage() {
                 term !== query,
         );
 
+        // Fixed: Use Array.from() instead of spread syntax with Set
         setSuggestions(
-            [...new Set([...matchingRecent, ...filtered])].slice(0, 5),
+            Array.from(new Set([...matchingRecent, ...filtered])).slice(0, 5),
         );
     };
 

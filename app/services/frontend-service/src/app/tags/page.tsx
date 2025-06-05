@@ -649,10 +649,10 @@ export default function TagsPage() {
                                 variant="danger"
                                 onClick={handleDeleteTag}
                                 isLoading={isSubmitting}
-                                disabled={
+                                disabled={Boolean(
                                     selectedTag?._count?.tasks &&
-                                    selectedTag._count.tasks > 0
-                                }
+                                        selectedTag._count.tasks > 0,
+                                )}
                             >
                                 Delete Tag
                             </Button>
@@ -953,10 +953,10 @@ function TagCard({ tag, onEdit, onDelete }: TagCardProps) {
                                         setShowActions(false);
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                                    disabled={
+                                    disabled={Boolean(
                                         tag._count?.tasks &&
-                                        tag._count.tasks > 0
-                                    }
+                                            tag._count.tasks > 0,
+                                    )}
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
