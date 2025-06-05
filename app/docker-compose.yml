@@ -180,45 +180,6 @@ services:
             timeout: 10s
             retries: 3
 
-    # Frontend Service (Next.js)
-    frontend-service:
-        build:
-            context: ./services/frontend-service
-            dockerfile: Dockerfile
-        container_name: todo-frontend-service
-        restart: unless-stopped
-        environment:
-            NODE_ENV: production
-            PORT: 9000
-            # Server-side URLs for Next.js rewrites (container-to-container communication)
-            AUTH_SERVICE_URL: "http://auth-service:3000"
-            DB_SERVICE_URL: "http://db-service:4000"
-            CHAT_SERVICE_URL: "http://chat-service:5000"
-        ports:
-            - "9000:9000"
-        depends_on:
-            auth-service:
-                condition: service_healthy
-            db-service:
-                condition: service_healthy
-            chat-service:
-                condition: service_healthy
-        networks:
-            - todo-network
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "wget",
-                    "--no-verbose",
-                    "--tries=1",
-                    "--spider",
-                    "http://localhost:9000",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-
 volumes:
     mariadb_data:
         driver: local
