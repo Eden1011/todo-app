@@ -154,7 +154,6 @@ services:
             AUTH_SERVICE_URL: "http://auth-service:3000"
             DB_SERVICE_URL: "http://db-service:4000"
             ACCESS_TOKEN_SECRET: "75a09b812d16c5c9bdadfce8fb6daa032a0ffb4046857c8c505fd7f739630ac4bb7f79749d52e9de1e43465925d812498dccbfce9252aa12db2103fe4e7c1af"
-            CORS_ORIGIN: "http://localhost:3000"
             DISABLE_RATE_LIMIT: "false"
         ports:
             - "5000:5000"
@@ -176,6 +175,45 @@ services:
                     "--tries=1",
                     "--spider",
                     "http://localhost:5000/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    # Frontend Service (Next.js)
+    frontend-service:
+        build:
+            context: ./services/frontend-service
+            dockerfile: Dockerfile
+        container_name: todo-frontend-service
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            PORT: 9000
+            # Server-side URLs for Next.js rewrites (container-to-container communication)
+            AUTH_SERVICE_URL: "http://auth-service:3000"
+            DB_SERVICE_URL: "http://db-service:4000"
+            CHAT_SERVICE_URL: "http://chat-service:5000"
+        ports:
+            - "9000:9000"
+        depends_on:
+            auth-service:
+                condition: service_healthy
+            db-service:
+                condition: service_healthy
+            chat-service:
+                condition: service_healthy
+        networks:
+            - todo-network
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:9000",
                 ]
             interval: 30s
             timeout: 10s
