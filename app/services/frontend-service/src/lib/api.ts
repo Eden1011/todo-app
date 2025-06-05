@@ -1358,13 +1358,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-
-// Export additional types
-export type {
-    ChangePasswordData,
-    UserSearchResult,
-    ExportOptions,
-    OnlineUser,
-    MessageSearchResult,
-    ChatStatistics,
-};
