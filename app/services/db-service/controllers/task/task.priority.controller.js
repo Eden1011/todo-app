@@ -3,9 +3,19 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Update task priority
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function updateTaskPriority(req, res) {
     try {
         const authId = req.user.id;
@@ -13,7 +23,6 @@ async function updateTaskPriority(req, res) {
         const taskId = parseInt(req.params.taskId);
         const { priority } = req.body;
 
-        // Validate priority
         const validPriorities = ["LOW", "MEDIUM", "HIGH", "URGENT"];
         if (!priority || !validPriorities.includes(priority)) {
             return res.status(400).json({
@@ -22,7 +31,6 @@ async function updateTaskPriority(req, res) {
             });
         }
 
-        // Check if user owns the task (only owner can change priority)
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -37,7 +45,19 @@ async function updateTaskPriority(req, res) {
             });
         }
 
-        // Update task priority
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify priority of tasks in projects.",
+                });
+            }
+        }
+
         const updatedTask = await prisma.task.update({
             where: { id: taskId },
             data: {
@@ -63,16 +83,12 @@ async function updateTaskPriority(req, res) {
     }
 }
 
-/**
- * Get tasks by priority for user
- */
 async function getTasksByPriority(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const { priority } = req.params;
 
-        // Validate priority
         const validPriorities = ["LOW", "MEDIUM", "HIGH", "URGENT"];
         if (!validPriorities.includes(priority)) {
             return res.status(400).json({
@@ -92,7 +108,6 @@ async function getTasksByPriority(req, res) {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
 
-        // Build where clause
         const where = {
             priority,
             OR: [{ ownerId: user.id }, { assigneeId: user.id }],
@@ -138,9 +153,6 @@ async function getTasksByPriority(req, res) {
     }
 }
 
-/**
- * Get priority statistics for user
- */
 async function getPriorityStatistics(req, res) {
     try {
         const authId = req.user.id;
@@ -170,13 +182,12 @@ async function getPriorityStatistics(req, res) {
             0,
         );
 
-        // Get urgent tasks due soon
         const urgentTasksDueSoon = await prisma.task.count({
             where: {
                 priority: "URGENT",
                 dueDate: {
                     gte: new Date(),
-                    lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
+                    lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 },
                 status: { not: "DONE" },
                 OR: [{ ownerId: user.id }, { assigneeId: user.id }],
@@ -217,9 +228,6 @@ async function getPriorityStatistics(req, res) {
     }
 }
 
-/**
- * Get high priority overdue tasks
- */
 async function getHighPriorityOverdueTasks(req, res) {
     try {
         const authId = req.user.id;

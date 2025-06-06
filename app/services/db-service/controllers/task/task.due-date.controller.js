@@ -6,9 +6,19 @@ const {
 
 const prisma = new PrismaClient();
 
-/**
- * Update task due date
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function updateTaskDueDate(req, res) {
     try {
         const authId = req.user.id;
@@ -16,7 +26,6 @@ async function updateTaskDueDate(req, res) {
         const taskId = parseInt(req.params.taskId);
         const { dueDate } = req.body;
 
-        // Validate due date
         let parsedDueDate = null;
         if (dueDate) {
             parsedDueDate = new Date(dueDate);
@@ -28,7 +37,6 @@ async function updateTaskDueDate(req, res) {
             }
         }
 
-        // Check if user owns the task (only owner can change due date)
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -43,7 +51,19 @@ async function updateTaskDueDate(req, res) {
             });
         }
 
-        // Update task due date
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify due dates of tasks in projects.",
+                });
+            }
+        }
+
         const updatedTask = await prisma.task.update({
             where: { id: taskId },
             data: {
@@ -69,9 +89,6 @@ async function updateTaskDueDate(req, res) {
     }
 }
 
-/**
- * Get tasks due soon
- */
 async function getTasksDueSoon(req, res) {
     try {
         const authId = req.user.id;
@@ -88,13 +105,11 @@ async function getTasksDueSoon(req, res) {
         const take = parseInt(limit);
         const daysAhead = parseInt(days);
 
-        // Calculate date range
         const now = new Date();
         const futureDate = new Date(
             now.getTime() + daysAhead * 24 * 60 * 60 * 1000,
         );
 
-        // Build where clause
         const where = {
             status: { notIn: ["DONE", "CANCELED"] },
             OR: [{ ownerId: user.id }, { assigneeId: user.id }],
@@ -127,7 +142,6 @@ async function getTasksDueSoon(req, res) {
             prisma.task.count({ where }),
         ]);
 
-        // Categorize tasks
         const categorizedTasks = {
             overdue: [],
             today: [],
@@ -189,9 +203,6 @@ async function getTasksDueSoon(req, res) {
     }
 }
 
-/**
- * Get overdue tasks
- */
 async function getOverdueTasks(req, res) {
     try {
         const authId = req.user.id;
@@ -231,7 +242,6 @@ async function getOverdueTasks(req, res) {
             prisma.task.count({ where }),
         ]);
 
-        // Calculate how overdue each task is
         const now = new Date();
         const tasksWithOverdueInfo = tasks.map((task) => ({
             ...task,
@@ -261,9 +271,6 @@ async function getOverdueTasks(req, res) {
     }
 }
 
-/**
- * Get tasks due today
- */
 async function getTasksDueToday(req, res) {
     try {
         const authId = req.user.id;
@@ -310,15 +317,11 @@ async function getTasksDueToday(req, res) {
     }
 }
 
-/**
- * Send due date reminders
- */
 async function sendDueDateReminders(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
 
-        // Get tasks due in the next 24 hours
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -340,13 +343,11 @@ async function sendDueDateReminders(req, res) {
         let notificationsSent = 0;
 
         for (const task of tasksDueSoon) {
-            // Send reminder to owner
             if (task.ownerId === user.id) {
                 await notifyDueDateReminder(task.id, task.ownerId);
                 notificationsSent++;
             }
 
-            // Send reminder to assignee if different from owner
             if (
                 task.assigneeId &&
                 task.assigneeId !== task.ownerId &&
@@ -373,9 +374,6 @@ async function sendDueDateReminders(req, res) {
     }
 }
 
-/**
- * Get due date statistics
- */
 async function getDueDateStatistics(req, res) {
     try {
         const authId = req.user.id;

@@ -6,9 +6,19 @@ const {
 
 const prisma = new PrismaClient();
 
-/**
- * Update task status
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function updateTaskStatus(req, res) {
     try {
         const authId = req.user.id;
@@ -16,7 +26,6 @@ async function updateTaskStatus(req, res) {
         const taskId = parseInt(req.params.taskId);
         const { status } = req.body;
 
-        // Validate status
         const validStatuses = [
             "TODO",
             "IN_PROGRESS",
@@ -31,7 +40,6 @@ async function updateTaskStatus(req, res) {
             });
         }
 
-        // Check if user has access to task (owner or assignee)
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -50,7 +58,19 @@ async function updateTaskStatus(req, res) {
             });
         }
 
-        // Update task status
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify status of tasks in projects.",
+                });
+            }
+        }
+
         const updatedTask = await prisma.task.update({
             where: { id: taskId },
             data: {
@@ -64,7 +84,6 @@ async function updateTaskStatus(req, res) {
             },
         });
 
-        // Notify relevant users about status change
         const usersToNotify = [];
         if (task.ownerId !== user.id) {
             usersToNotify.push(task.ownerId);
@@ -89,16 +108,12 @@ async function updateTaskStatus(req, res) {
     }
 }
 
-/**
- * Get task status history (if we had status history tracking)
- */
 async function getTaskStatusHistory(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -119,8 +134,6 @@ async function getTaskStatusHistory(req, res) {
             });
         }
 
-        // For now, return current status info
-        // In a real application, you might have a separate TaskStatusHistory table
         res.json({
             success: true,
             data: {
@@ -150,16 +163,12 @@ async function getTaskStatusHistory(req, res) {
     }
 }
 
-/**
- * Get tasks by status for user
- */
 async function getTasksByStatus(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const { status } = req.params;
 
-        // Validate status
         const validStatuses = [
             "TODO",
             "IN_PROGRESS",
@@ -228,9 +237,6 @@ async function getTasksByStatus(req, res) {
     }
 }
 
-/**
- * Get status statistics for user
- */
 async function getStatusStatistics(req, res) {
     try {
         const authId = req.user.id;

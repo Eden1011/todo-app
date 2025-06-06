@@ -3,9 +3,19 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Add category to task
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function addCategoryToTask(req, res) {
     try {
         const authId = req.user.id;
@@ -20,7 +30,6 @@ async function addCategoryToTask(req, res) {
             });
         }
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -35,7 +44,19 @@ async function addCategoryToTask(req, res) {
             });
         }
 
-        // Check if user owns the category
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify categories of tasks in projects.",
+                });
+            }
+        }
+
         const category = await prisma.category.findFirst({
             where: {
                 id: categoryId,
@@ -50,7 +71,6 @@ async function addCategoryToTask(req, res) {
             });
         }
 
-        // Check if category is already assigned to task
         const existingAssignment = await prisma.categoryOnTask.findUnique({
             where: {
                 categoryId_taskId: {
@@ -67,7 +87,6 @@ async function addCategoryToTask(req, res) {
             });
         }
 
-        // Add category to task
         const categoryOnTask = await prisma.categoryOnTask.create({
             data: {
                 categoryId: categoryId,
@@ -95,9 +114,6 @@ async function addCategoryToTask(req, res) {
     }
 }
 
-/**
- * Remove category from task
- */
 async function removeCategoryFromTask(req, res) {
     try {
         const authId = req.user.id;
@@ -105,7 +121,6 @@ async function removeCategoryFromTask(req, res) {
         const taskId = parseInt(req.params.taskId);
         const categoryId = parseInt(req.params.categoryId);
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -120,7 +135,19 @@ async function removeCategoryFromTask(req, res) {
             });
         }
 
-        // Check if category assignment exists
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify categories of tasks in projects.",
+                });
+            }
+        }
+
         const categoryOnTask = await prisma.categoryOnTask.findUnique({
             where: {
                 categoryId_taskId: {
@@ -142,7 +169,6 @@ async function removeCategoryFromTask(req, res) {
             });
         }
 
-        // Check if user owns the category
         if (categoryOnTask.category.ownerId !== user.id) {
             return res.status(403).json({
                 success: false,
@@ -150,7 +176,6 @@ async function removeCategoryFromTask(req, res) {
             });
         }
 
-        // Remove category from task
         await prisma.categoryOnTask.delete({
             where: {
                 categoryId_taskId: {
@@ -174,16 +199,12 @@ async function removeCategoryFromTask(req, res) {
     }
 }
 
-/**
- * Get all categories for a task
- */
 async function getTaskCategories(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -235,9 +256,6 @@ async function getTaskCategories(req, res) {
     }
 }
 
-/**
- * Get all tasks for a category
- */
 async function getCategoryTasks(req, res) {
     try {
         const authId = req.user.id;
@@ -249,7 +267,6 @@ async function getCategoryTasks(req, res) {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
 
-        // Check if user owns the category
         const category = await prisma.category.findFirst({
             where: {
                 id: categoryId,
@@ -264,7 +281,6 @@ async function getCategoryTasks(req, res) {
             });
         }
 
-        // Build where clause for tasks
         const taskWhere = {};
         if (status) taskWhere.status = status;
         if (priority) taskWhere.priority = priority;

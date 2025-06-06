@@ -3,9 +3,19 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Create a new task
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function createTask(req, res) {
     try {
         const authId = req.user.id;
@@ -19,21 +29,18 @@ async function createTask(req, res) {
             dueDate,
         } = req.body;
 
-        // Explicitly handle potentially stringified arrays and other IDs from body
         let categoryIdsReq = req.body.categoryIds;
         let tagIdsReq = req.body.tagIds;
         let projectIdFromBody = req.body.projectId;
         let assigneeAuthIdFromBody = req.body.assigneeAuthId;
 
         if (!title || title.trim() === "") {
-            // Ensure title is not just whitespace
             return res.status(400).json({
                 success: false,
                 error: "Title is required and cannot be empty.",
             });
         }
 
-        // Process categoryIds
         let finalCategoryIds = [];
         if (categoryIdsReq) {
             if (typeof categoryIdsReq === "string") {
@@ -50,7 +57,6 @@ async function createTask(req, res) {
             }
         }
 
-        // Process tagIds
         let finalTagIds = [];
         if (tagIdsReq) {
             if (typeof tagIdsReq === "string") {
@@ -92,7 +98,6 @@ async function createTask(req, res) {
         ) {
             finalProjectId = parseInt(projectIdFromBody, 10);
             if (isNaN(finalProjectId) || finalProjectId <= 0) {
-                // Check if positive
                 return res.status(400).json({
                     success: false,
                     error: "Project ID must be a positive integer.",
@@ -113,6 +118,17 @@ async function createTask(req, res) {
                 return res.status(403).json({
                     success: false,
                     error: "You don't have access to this project or project does not exist.",
+                });
+            }
+
+            const hasWriteAccess = await checkProjectWriteAccess(
+                finalProjectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot create tasks in projects. Only project owners, admins, and members can create tasks.",
                 });
             }
         }
@@ -163,14 +179,11 @@ async function createTask(req, res) {
         });
     } catch (error) {
         console.error("Error in createTask controller:", error);
-        // Check if it's a Prisma known request error for more specific messages
         if (error.code && error.meta) {
-            // Basic check for Prisma error structure
             return res.status(400).json({
-                // Or appropriate status code
                 success: false,
                 error: "Database operation failed.",
-                details: error.meta.target || error.message, // Or more specific parsing of error.meta
+                details: error.meta.target || error.message,
             });
         }
         res.status(500).json({
@@ -197,7 +210,7 @@ async function getTasks(req, res) {
 
         let page = parseInt(req.query.page, 10) || 1;
         let limit = parseInt(req.query.limit, 10) || 20;
-        if (limit > 100) limit = 100; // Max limit
+        if (limit > 100) limit = 100;
         if (page < 1) page = 1;
 
         let projectId = req.query.projectId;
@@ -224,11 +237,6 @@ async function getTasks(req, res) {
 
         if (assignedToMeQuery === "true") {
             where.assigneeId = user.id;
-        } else if (assignedToMeQuery === "false") {
-            // This might mean tasks not assigned to the user, or all tasks if not specified.
-            // Current OR logic already covers tasks owned by user OR assigned to user.
-            // If "false" truly means "not assigned to me at all", the OR condition needs adjustment.
-            // For now, assuming "false" or absence of "assignedToMe" doesn't add further assignee restriction beyond the main OR.
         }
 
         if (categoryId && categoryId !== "") {
@@ -266,7 +274,6 @@ async function getTasks(req, res) {
                     { description: { contains: search, mode: "insensitive" } },
                 ],
             };
-            // If where.OR already exists, combine with AND
             if (where.OR) {
                 where.AND = where.AND
                     ? [...where.AND, searchCondition]
@@ -333,12 +340,10 @@ async function getTaskById(req, res) {
         const taskId = parseInt(req.params.id, 10);
 
         if (isNaN(taskId) || taskId <= 0) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    error: "Task ID must be a positive integer.",
-                });
+            return res.status(400).json({
+                success: false,
+                error: "Task ID must be a positive integer.",
+            });
         }
 
         const task = await prisma.task.findFirst({
@@ -392,12 +397,10 @@ async function updateTask(req, res) {
         const taskId = parseInt(req.params.id, 10);
 
         if (isNaN(taskId) || taskId <= 0) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    error: "Task ID must be a positive integer.",
-                });
+            return res.status(400).json({
+                success: false,
+                error: "Task ID must be a positive integer.",
+            });
         }
 
         const { title, description, priority, status, dueDate } = req.body;
@@ -413,7 +416,6 @@ async function updateTask(req, res) {
                 OR: [{ ownerId: user.id }, { assigneeId: user.id }],
             },
             include: {
-                // Include current assignee to check if it changed
                 assignee: { select: { authId: true } },
             },
         });
@@ -440,18 +442,56 @@ async function updateTask(req, res) {
 
             if (projectIdFromBody !== undefined) {
                 if (projectIdFromBody === null || projectIdFromBody === "") {
+                    if (existingTask.projectId) {
+                        const hasWriteAccess = await checkProjectWriteAccess(
+                            existingTask.projectId,
+                            user.id,
+                        );
+                        if (!hasWriteAccess) {
+                            return res.status(403).json({
+                                success: false,
+                                error: "Viewers cannot remove tasks from projects.",
+                            });
+                        }
+                    }
                     updateData.projectId = null;
                 } else {
                     const parsedProjectId = parseInt(projectIdFromBody, 10);
                     if (isNaN(parsedProjectId) || parsedProjectId <= 0) {
-                        return res
-                            .status(400)
-                            .json({
-                                success: false,
-                                error: "Project ID must be a positive integer or null.",
-                            });
+                        return res.status(400).json({
+                            success: false,
+                            error: "Project ID must be a positive integer or null.",
+                        });
                     }
-                    // TODO: Add validation for project existence and user access if changing project
+
+                    const hasWriteAccess = await checkProjectWriteAccess(
+                        parsedProjectId,
+                        user.id,
+                    );
+                    if (!hasWriteAccess) {
+                        return res.status(403).json({
+                            success: false,
+                            error: "Viewers cannot assign tasks to projects. Only project owners, admins, and members can modify project tasks.",
+                        });
+                    }
+
+                    if (
+                        existingTask.projectId &&
+                        existingTask.projectId !== parsedProjectId
+                    ) {
+                        const hasCurrentWriteAccess =
+                            await checkProjectWriteAccess(
+                                existingTask.projectId,
+                                user.id,
+                            );
+                        if (!hasCurrentWriteAccess) {
+                            return res.status(403).json({
+                                success: false,
+                                error: "Viewers cannot move tasks between projects.",
+                            });
+                        }
+                    }
+
                     updateData.projectId = parsedProjectId;
                 }
             }
@@ -471,12 +511,10 @@ async function updateTask(req, res) {
                         isNaN(parsedAssigneeAuthId) ||
                         parsedAssigneeAuthId <= 0
                     ) {
-                        return res
-                            .status(400)
-                            .json({
-                                success: false,
-                                error: "Assignee Auth ID must be a positive integer or null.",
-                            });
+                        return res.status(400).json({
+                            success: false,
+                            error: "Assignee Auth ID must be a positive integer or null.",
+                        });
                     }
                     const assignee =
                         await getOrCreateUser(parsedAssigneeAuthId);
@@ -484,14 +522,11 @@ async function updateTask(req, res) {
                 }
             }
         } else {
-            // Not the owner, more restricted updates
             if (priority !== undefined && priority !== existingTask.priority) {
-                return res
-                    .status(403)
-                    .json({
-                        success: false,
-                        error: "Only owner can change priority",
-                    });
+                return res.status(403).json({
+                    success: false,
+                    error: "Only owner can change priority",
+                });
             }
             if (
                 projectIdFromBody !== undefined &&
@@ -500,12 +535,10 @@ async function updateTask(req, res) {
                 existingTask.projectId !== null &&
                 parseInt(projectIdFromBody, 10) !== existingTask.projectId
             ) {
-                return res
-                    .status(403)
-                    .json({
-                        success: false,
-                        error: "Only owner can change project",
-                    });
+                return res.status(403).json({
+                    success: false,
+                    error: "Only owner can change project",
+                });
             }
             if (assigneeAuthIdFromBody !== undefined) {
                 const currentAssigneeAuthId = existingTask.assignee
@@ -517,12 +550,47 @@ async function updateTask(req, res) {
                         ? null
                         : parseInt(assigneeAuthIdFromBody, 10);
                 if (newAssigneeAuthId !== currentAssigneeAuthId) {
-                    return res
-                        .status(403)
-                        .json({
-                            success: false,
-                            error: "Only owner can change assignee",
-                        });
+                    return res.status(403).json({
+                        success: false,
+                        error: "Only owner can change assignee",
+                    });
+                }
+            }
+
+            if (projectIdFromBody !== undefined) {
+                const currentProjectId = existingTask.projectId;
+                const newProjectId =
+                    projectIdFromBody === null || projectIdFromBody === ""
+                        ? null
+                        : parseInt(projectIdFromBody, 10);
+
+                if (currentProjectId !== newProjectId) {
+                    if (currentProjectId) {
+                        const hasCurrentWriteAccess =
+                            await checkProjectWriteAccess(
+                                currentProjectId,
+                                user.id,
+                            );
+                        if (!hasCurrentWriteAccess) {
+                            return res.status(403).json({
+                                success: false,
+                                error: "Viewers cannot modify project assignments.",
+                            });
+                        }
+                    }
+
+                    if (newProjectId) {
+                        const hasNewWriteAccess = await checkProjectWriteAccess(
+                            newProjectId,
+                            user.id,
+                        );
+                        if (!hasNewWriteAccess) {
+                            return res.status(403).json({
+                                success: false,
+                                error: "Viewers cannot assign tasks to projects.",
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -532,7 +600,6 @@ async function updateTask(req, res) {
             data: updateData,
         });
 
-        // Handle categories and tags (owner only or based on specific project permissions if implemented)
         if (isOwner) {
             if (categoryIdsReq !== undefined) {
                 let finalCategoryIds = [];
@@ -622,12 +689,10 @@ async function deleteTask(req, res) {
         const taskId = parseInt(req.params.id, 10);
 
         if (isNaN(taskId) || taskId <= 0) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    error: "Task ID must be a positive integer.",
-                });
+            return res.status(400).json({
+                success: false,
+                error: "Task ID must be a positive integer.",
+            });
         }
 
         const task = await prisma.task.findFirst({
@@ -644,16 +709,26 @@ async function deleteTask(req, res) {
             });
         }
 
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot delete tasks from projects.",
+                });
+            }
+        }
+
         await prisma.$transaction([
             prisma.categoryOnTask.deleteMany({ where: { taskId: taskId } }),
             prisma.tagOnTask.deleteMany({ where: { taskId: taskId } }),
-            // Consider other related data like notifications, comments if they exist
-            // await prisma.notification.deleteMany({ where: { relatedTaskId: taskId } }),
             prisma.task.delete({ where: { id: taskId } }),
         ]);
 
         res.status(200).json({
-            // Or 204 No Content if you prefer, but 200 with message is also common
             success: true,
             data: {
                 message: "Task deleted successfully",
@@ -674,12 +749,10 @@ async function assignTask(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.id, 10);
         if (isNaN(taskId) || taskId <= 0) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    error: "Task ID must be a positive integer.",
-                });
+            return res.status(400).json({
+                success: false,
+                error: "Task ID must be a positive integer.",
+            });
         }
         const { assigneeAuthId } = req.body;
 
@@ -697,6 +770,19 @@ async function assignTask(req, res) {
             });
         }
 
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot assign tasks in projects.",
+                });
+            }
+        }
+
         let assigneeIdToSet = null;
         if (
             assigneeAuthId !== null &&
@@ -705,12 +791,10 @@ async function assignTask(req, res) {
         ) {
             const parsedAssigneeAuthId = parseInt(assigneeAuthId, 10);
             if (isNaN(parsedAssigneeAuthId) || parsedAssigneeAuthId <= 0) {
-                return res
-                    .status(400)
-                    .json({
-                        success: false,
-                        error: "Assignee Auth ID must be a positive integer or null.",
-                    });
+                return res.status(400).json({
+                    success: false,
+                    error: "Assignee Auth ID must be a positive integer or null.",
+                });
             }
             const assignee = await getOrCreateUser(parsedAssigneeAuthId);
             assigneeIdToSet = assignee.id;

@@ -3,9 +3,19 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Add tag to task
- */
+async function checkProjectWriteAccess(projectId, userId) {
+    if (!projectId) return true;
+
+    const member = await prisma.projectMember.findFirst({
+        where: {
+            projectId: projectId,
+            userId: userId,
+            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
+        },
+    });
+    return !!member;
+}
+
 async function addTagToTask(req, res) {
     try {
         const authId = req.user.id;
@@ -20,7 +30,6 @@ async function addTagToTask(req, res) {
             });
         }
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -35,7 +44,19 @@ async function addTagToTask(req, res) {
             });
         }
 
-        // Check if user owns the tag
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify tags of tasks in projects.",
+                });
+            }
+        }
+
         const tag = await prisma.tag.findFirst({
             where: {
                 id: tagId,
@@ -50,7 +71,6 @@ async function addTagToTask(req, res) {
             });
         }
 
-        // Check if tag is already assigned to task
         const existingAssignment = await prisma.tagOnTask.findUnique({
             where: {
                 tagId_taskId: {
@@ -67,7 +87,6 @@ async function addTagToTask(req, res) {
             });
         }
 
-        // Add tag to task
         const tagOnTask = await prisma.tagOnTask.create({
             data: {
                 tagId: tagId,
@@ -95,9 +114,6 @@ async function addTagToTask(req, res) {
     }
 }
 
-/**
- * Remove tag from task
- */
 async function removeTagFromTask(req, res) {
     try {
         const authId = req.user.id;
@@ -105,7 +121,6 @@ async function removeTagFromTask(req, res) {
         const taskId = parseInt(req.params.taskId);
         const tagId = parseInt(req.params.tagId);
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -120,7 +135,19 @@ async function removeTagFromTask(req, res) {
             });
         }
 
-        // Check if tag assignment exists
+        if (task.projectId) {
+            const hasWriteAccess = await checkProjectWriteAccess(
+                task.projectId,
+                user.id,
+            );
+            if (!hasWriteAccess) {
+                return res.status(403).json({
+                    success: false,
+                    error: "Viewers cannot modify tags of tasks in projects.",
+                });
+            }
+        }
+
         const tagOnTask = await prisma.tagOnTask.findUnique({
             where: {
                 tagId_taskId: {
@@ -142,7 +169,6 @@ async function removeTagFromTask(req, res) {
             });
         }
 
-        // Check if user owns the tag
         if (tagOnTask.tag.ownerId !== user.id) {
             return res.status(403).json({
                 success: false,
@@ -150,7 +176,6 @@ async function removeTagFromTask(req, res) {
             });
         }
 
-        // Remove tag from task
         await prisma.tagOnTask.delete({
             where: {
                 tagId_taskId: {
@@ -174,16 +199,12 @@ async function removeTagFromTask(req, res) {
     }
 }
 
-/**
- * Get all tags for a task
- */
 async function getTaskTags(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
 
-        // Check if user has access to task
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -235,9 +256,6 @@ async function getTaskTags(req, res) {
     }
 }
 
-/**
- * Get all tasks for a tag
- */
 async function getTagTasks(req, res) {
     try {
         const authId = req.user.id;
@@ -249,7 +267,6 @@ async function getTagTasks(req, res) {
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const take = parseInt(limit);
 
-        // Check if user owns the tag
         const tag = await prisma.tag.findFirst({
             where: {
                 id: tagId,
@@ -264,7 +281,6 @@ async function getTagTasks(req, res) {
             });
         }
 
-        // Build where clause for tasks
         const taskWhere = {};
         if (status) taskWhere.status = status;
         if (priority) taskWhere.priority = priority;
@@ -326,16 +342,12 @@ async function getTagTasks(req, res) {
     }
 }
 
-/**
- * Get popular tag combinations (tags often used together)
- */
 async function getPopularTagCombinations(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const limit = parseInt(req.query.limit) || 10;
 
-        // Get all task-tag relationships for user's tags
         const tagCombinations = await prisma.tagOnTask.findMany({
             where: {
                 tag: {
@@ -350,7 +362,6 @@ async function getPopularTagCombinations(req, res) {
             },
         });
 
-        // Group by taskId to find tag combinations
         const taskTagMap = {};
         tagCombinations.forEach((tt) => {
             if (!taskTagMap[tt.taskId]) {
@@ -359,11 +370,9 @@ async function getPopularTagCombinations(req, res) {
             taskTagMap[tt.taskId].push(tt.tag);
         });
 
-        // Find combinations that appear together
         const combinationCounts = {};
         Object.values(taskTagMap).forEach((tags) => {
             if (tags.length > 1) {
-                // Generate all pairs
                 for (let i = 0; i < tags.length; i++) {
                     for (let j = i + 1; j < tags.length; j++) {
                         const combo = [tags[i].name, tags[j].name]
@@ -376,7 +385,6 @@ async function getPopularTagCombinations(req, res) {
             }
         });
 
-        // Sort by frequency and take top combinations
         const popularCombinations = Object.entries(combinationCounts)
             .sort(([, a], [, b]) => b - a)
             .slice(0, limit)
