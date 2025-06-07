@@ -85,10 +85,8 @@ async function updateTaskStatus(req, res) {
         });
 
         const usersToNotify = [];
-        if (task.ownerId !== user.id) {
-            usersToNotify.push(task.ownerId);
-        }
-        if (task.assigneeId && task.assigneeId !== user.id) {
+        usersToNotify.push(task.ownerId);
+        if (task.assigneeId && task.assigneeId !== task.ownerId) {
             usersToNotify.push(task.assigneeId);
         }
 

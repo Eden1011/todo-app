@@ -2,18 +2,14 @@ const { useState, useEffect } = React;
 
 function Profile({ user }) {
     const [profile, setProfile] = useState(null);
-    // Usunięto stany dla notifications, categories, tags
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("overview");
-
-    // Usunięto stany formularzy dla categoryForm, tagForm i modali
 
     useEffect(() => {
         if (activeTab === "overview") {
             loadProfileData();
         }
-        // Usunięto ładowanie danych dla usuniętych zakładek
     }, [activeTab]);
 
     const loadProfileData = async () => {
@@ -31,16 +27,11 @@ function Profile({ user }) {
         }
     };
 
-    // Usunięto funkcje: loadNotifications, loadCategories, loadTags
-    // Usunięto funkcje: handleMarkNotificationRead, handleMarkAllNotificationsRead, handleDeleteNotification
-    // Usunięto funkcje: handleCreateCategory, handleCreateTag, handleDeleteCategory, handleDeleteTag
-
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString();
     };
 
     if (loading && activeTab === "overview") {
-        // Sprawdzaj ładowanie tylko dla aktywnej zakładki Overview
         return <div className="loading">Loading profile...</div>;
     }
 
@@ -50,7 +41,7 @@ function Profile({ user }) {
 
             {error && <div className="error">{error}</div>}
 
-            {/* Profile Tabs */}
+            {}
             <div
                 style={{
                     display: "flex",
@@ -61,7 +52,7 @@ function Profile({ user }) {
             >
                 {[
                     { key: "overview", label: "Overview" },
-                    // Usunięto zakładki: Notifications, Categories, Tags
+
                     { key: "settings", label: "Settings" },
                 ].map((tab) => (
                     <button
@@ -134,13 +125,12 @@ function Profile({ user }) {
                                             {profile.statistics.projects}
                                         </strong>
                                     </div>
-                                    {/* Usunięto wyświetlanie statystyk dla Categories i Tags */}
+                                    {}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Task Status Breakdown */}
                     <div className="card" style={{ marginTop: "2rem" }}>
                         <div className="card-header">
                             <h3 className="card-title">
@@ -185,8 +175,6 @@ function Profile({ user }) {
                                 gap: "1rem",
                             }}
                         >
-                            {/* Usunięto sekcję Export Data */}
-                            {/* Usunięto sekcję Danger Zone z przyciskiem Delete Account */}
                             <p>
                                 Ustawienia konta pojawią się tutaj w
                                 przyszłości.
@@ -195,8 +183,6 @@ function Profile({ user }) {
                     </div>
                 </div>
             )}
-
-            {/* Usunięto Modale dla Category i Tag */}
         </div>
     );
 }

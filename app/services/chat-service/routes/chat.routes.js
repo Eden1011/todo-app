@@ -44,13 +44,6 @@ router.post(
     asyncHandler(createChat),
 );
 
-// Auto-create project chat (webhook endpoint - no auth required for internal service calls)
-router.post(
-    "/auto-create",
-    createChatLimiter,
-    asyncHandler(autoCreateProjectChat),
-);
-
 // Get chats (with optional filtering)
 router.get(
     "/",

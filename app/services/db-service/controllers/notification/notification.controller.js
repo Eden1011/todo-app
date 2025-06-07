@@ -3,9 +3,6 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Create a new notification
- */
 async function createNotification(userId, type, content, relatedTaskId = null) {
     try {
         const notification = await prisma.notification.create({
@@ -25,9 +22,6 @@ async function createNotification(userId, type, content, relatedTaskId = null) {
     }
 }
 
-/**
- * Get notifications for user
- */
 async function getNotifications(req, res) {
     try {
         const authId = req.user.id;
@@ -104,9 +98,6 @@ async function getNotifications(req, res) {
     }
 }
 
-/**
- * Get notification by ID
- */
 async function getNotificationById(req, res) {
     try {
         const authId = req.user.id;
@@ -149,9 +140,6 @@ async function getNotificationById(req, res) {
     }
 }
 
-/**
- * Mark notification as read
- */
 async function markAsRead(req, res) {
     try {
         const authId = req.user.id;
@@ -189,9 +177,6 @@ async function markAsRead(req, res) {
     }
 }
 
-/**
- * Mark all notifications as read
- */
 async function markAllAsRead(req, res) {
     try {
         const authId = req.user.id;
@@ -221,9 +206,6 @@ async function markAllAsRead(req, res) {
     }
 }
 
-/**
- * Delete notification
- */
 async function deleteNotification(req, res) {
     try {
         const authId = req.user.id;
@@ -262,9 +244,6 @@ async function deleteNotification(req, res) {
     }
 }
 
-/**
- * Delete all read notifications
- */
 async function deleteAllRead(req, res) {
     try {
         const authId = req.user.id;
@@ -291,9 +270,6 @@ async function deleteAllRead(req, res) {
     }
 }
 
-/**
- * Get notification statistics
- */
 async function getNotificationStats(req, res) {
     try {
         const authId = req.user.id;
@@ -336,9 +312,6 @@ async function getNotificationStats(req, res) {
     }
 }
 
-/**
- * Utility function to create task assignment notification
- */
 async function notifyTaskAssigned(taskId, assigneeUserId, assignerAuthId) {
     try {
         const task = await prisma.task.findUnique({
@@ -359,9 +332,6 @@ async function notifyTaskAssigned(taskId, assigneeUserId, assignerAuthId) {
     }
 }
 
-/**
- * Utility function to create task status change notification
- */
 async function notifyTaskStatusChanged(taskId, newStatus, userIds) {
     try {
         // Return early if no users to notify
@@ -395,9 +365,6 @@ async function notifyTaskStatusChanged(taskId, newStatus, userIds) {
     }
 }
 
-/**
- * Utility function to create due date reminder notification
- */
 async function notifyDueDateReminder(taskId, userId) {
     try {
         const task = await prisma.task.findUnique({
@@ -421,9 +388,6 @@ async function notifyDueDateReminder(taskId, userId) {
     }
 }
 
-/**
- * Utility function to create project invite notification
- */
 async function notifyProjectInvite(projectId, userId, inviterAuthId) {
     try {
         const project = await prisma.project.findUnique({

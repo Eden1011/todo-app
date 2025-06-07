@@ -8,9 +8,6 @@ const {
 
 const prisma = new PrismaClient();
 
-/**
- * Create a new project
- */
 async function createProject(req, res) {
     try {
         const authId = req.user.id;
@@ -87,9 +84,6 @@ async function createProject(req, res) {
     }
 }
 
-/**
- * Get projects with pagination and filtering
- */
 async function getProjects(req, res) {
     try {
         const authId = req.user.id;
@@ -213,9 +207,6 @@ async function getProjects(req, res) {
     }
 }
 
-/**
- * Get project by ID
- */
 async function getProjectById(req, res) {
     try {
         const authId = req.user.id;
@@ -299,9 +290,6 @@ async function getProjectById(req, res) {
     }
 }
 
-/**
- * Get project chat information
- */
 async function getProjectChatInfo(req, res) {
     try {
         const authId = req.user.id;
@@ -373,9 +361,6 @@ async function getProjectChatInfo(req, res) {
     }
 }
 
-/**
- * Update project
- */
 async function updateProject(req, res) {
     try {
         const authId = req.user.id;
@@ -432,9 +417,6 @@ async function updateProject(req, res) {
     }
 }
 
-/**
- * Delete project
- */
 async function deleteProject(req, res) {
     try {
         const authId = req.user.id;
@@ -474,9 +456,6 @@ async function deleteProject(req, res) {
     }
 }
 
-/**
- * Add member to project
- */
 async function addMember(req, res) {
     try {
         const authId = req.user.id;
@@ -549,9 +528,6 @@ async function addMember(req, res) {
     }
 }
 
-/**
- * Update member role
- */
 async function updateMemberRole(req, res) {
     try {
         const authId = req.user.id;
@@ -604,9 +580,6 @@ async function updateMemberRole(req, res) {
     }
 }
 
-/**
- * Remove member from project
- */
 async function removeMember(req, res) {
     try {
         const authId = req.user.id;

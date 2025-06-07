@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 function App() {
-    const [currentView, setCurrentView] = useState("tasks"); // Zmieniono na "tasks"
+    const [currentView, setCurrentView] = useState("tasks");
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -19,8 +19,6 @@ function App() {
         try {
             const userData = await API.verifyToken();
             setUser(userData);
-            // Domyślny widok jest już ustawiony na "tasks" w useState
-            // Jeśli użytkownik jest zalogowany, nie zmieniamy już currentView tutaj na siłę
         } catch (error) {
             console.error("Auth check failed:", error);
             AuthUtils.removeToken();
@@ -32,13 +30,13 @@ function App() {
     const handleLogin = (userData, token) => {
         AuthUtils.setToken(token);
         setUser(userData);
-        setCurrentView("tasks"); // Po zalogowaniu przejdź do Tasks
+        setCurrentView("tasks");
     };
 
     const handleLogout = () => {
         AuthUtils.removeToken();
         setUser(null);
-        setCurrentView("auth"); // Po wylogowaniu pokaż formularz logowania/rejestracji
+        setCurrentView("auth");
     };
 
     if (loading) {
@@ -65,7 +63,7 @@ function App() {
                 <div className="header-content">
                     <div className="logo">Todo App</div>
                     <nav className="nav">
-                        {/* Usunięto przycisk Dashboard */}
+                        {}
                         <button
                             className={currentView === "tasks" ? "active" : ""}
                             onClick={() => setCurrentView("tasks")}
@@ -108,7 +106,7 @@ function App() {
             </header>
 
             <main className="main">
-                {/* Usunięto renderowanie Dashboard */}
+                {}
                 {currentView === "tasks" && <Tasks user={user} />}
                 {currentView === "projects" && <Projects user={user} />}
                 {currentView === "chat" && <Chat user={user} />}

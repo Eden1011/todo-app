@@ -16,7 +16,6 @@ function Tasks({ user }) {
         priority: "",
         projectId: "",
         assignedToMe: false,
-        // Usunięto 'search' z filtrów
         sortBy: "updatedAt",
         sortOrder: "desc",
     });
@@ -59,13 +58,11 @@ function Tasks({ user }) {
                 limit: pagination.limit,
             };
 
-            // Remove empty filters
             Object.keys(params).forEach((key) => {
                 if (params[key] === "" || params[key] === false) {
                     delete params[key];
                 }
             });
-            // Upewnij się, że parametr 'search' nie jest wysyłany, jeśli został usunięty z filtrów
             delete params.search;
 
             const response = await API.getTasks(params);
@@ -93,7 +90,6 @@ function Tasks({ user }) {
     };
 
     const loadCategories = async () => {
-        // Zostawione na wypadek gdyby formularz dodawania/edycji zadań nadal ich używał
         try {
             const response = await API.getCategories();
             setCategories(response.data.categories);
@@ -103,7 +99,6 @@ function Tasks({ user }) {
     };
 
     const loadTags = async () => {
-        // Zostawione na wypadek gdyby formularz dodawania/edycji zadań nadal ich używał
         try {
             const response = await API.getTags();
             setTags(response.data.tags);
@@ -265,10 +260,7 @@ function Tasks({ user }) {
 
             {error && <div className="error">{error}</div>}
 
-            {/* Filters */}
             <div className="filters">
-                {/* Usunięto grupę filtra dla Search */}
-
                 <div className="filter-group">
                     <label>Status</label>
                     <select

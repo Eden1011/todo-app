@@ -1,6 +1,5 @@
 const { body, query, param, validationResult } = require("express-validator");
 
-// Task validation schemas
 const createTaskValidation = [
     body("title")
         .isLength({ min: 1, max: 200 })
@@ -147,7 +146,6 @@ const taskIdParamValidation = [
         .withMessage("Task ID must be a positive integer"),
 ];
 
-// Status validation schemas
 const updateTaskStatusValidation = [
     ...taskIdParamValidation,
     body("status")
@@ -157,7 +155,6 @@ const updateTaskStatusValidation = [
         ),
 ];
 
-// Priority validation schemas
 const updateTaskPriorityValidation = [
     ...taskIdParamValidation,
     body("priority")
@@ -165,7 +162,6 @@ const updateTaskPriorityValidation = [
         .withMessage("Priority must be LOW, MEDIUM, HIGH, or URGENT"),
 ];
 
-// Due date validation schemas
 const updateTaskDueDateValidation = [
     ...taskIdParamValidation,
     body("dueDate")
@@ -174,7 +170,6 @@ const updateTaskDueDateValidation = [
         .withMessage("Due date must be a valid ISO8601 date"),
 ];
 
-// Category validation schemas
 const createCategoryValidation = [
     body("name")
         .isLength({ min: 1, max: 100 })
@@ -206,7 +201,6 @@ const addCategoryToTaskValidation = [
         .withMessage("Category ID must be a positive integer"),
 ];
 
-// Tag validation schemas
 const createTagValidation = [
     body("name")
         .isLength({ min: 1, max: 50 })
@@ -238,7 +232,6 @@ const addTagToTaskValidation = [
         .withMessage("Tag ID must be a positive integer"),
 ];
 
-// Project validation schemas
 const createProjectValidation = [
     body("name")
         .isLength({ min: 1, max: 200 })
@@ -286,7 +279,6 @@ const updateMemberRoleValidation = [
         .withMessage("Role must be OWNER, ADMIN, MEMBER, or VIEWER"),
 ];
 
-// Common pagination validation
 const paginationValidation = [
     query("page")
         .optional()
@@ -298,7 +290,6 @@ const paginationValidation = [
         .withMessage("Limit must be between 1 and 100"),
 ];
 
-// Export validation
 const exportValidation = [
     query("format")
         .optional()
@@ -316,9 +307,27 @@ const exportValidation = [
 
 const searchUserValidation = [
     query("query")
+        .optional()
         .isLength({ min: 2, max: 50 })
-        .withMessage("Search query must be between 2 and 50 characters")
+        .withMessage("Query must be between 2 and 50 characters")
         .trim(),
+    query("id")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("ID must be a positive integer"),
+    query("authId")
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Auth ID must be a positive integer"),
+    query().custom((value, { req }) => {
+        const { query, id, authId } = req.query;
+        if (!query && !id && !authId) {
+            throw new Error(
+                "At least one search parameter (query, id, or authId) is required",
+            );
+        }
+        return true;
+    }),
 ];
 
 function handleValidationErrors(req, res, next) {
@@ -334,41 +343,25 @@ function handleValidationErrors(req, res, next) {
 }
 
 module.exports = {
-    // Task validations
     createTaskValidation,
     updateTaskValidation,
     getTasksValidation,
     idParamValidation,
     taskIdParamValidation,
-
-    // Status validations
     updateTaskStatusValidation,
-
-    // Priority validations
     updateTaskPriorityValidation,
-
-    // Due date validations
     updateTaskDueDateValidation,
-
-    // Category validations
     createCategoryValidation,
     updateCategoryValidation,
     addCategoryToTaskValidation,
-
-    // Tag validations
     createTagValidation,
     updateTagValidation,
     addTagToTaskValidation,
-
-    // Project validations
     createProjectValidation,
     updateProjectValidation,
     addMemberValidation,
     updateMemberRoleValidation,
-
     searchUserValidation,
-
-    // Common validations
     paginationValidation,
     exportValidation,
     handleValidationErrors,

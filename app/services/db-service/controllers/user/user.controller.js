@@ -134,25 +134,39 @@ async function getUserActivity(req, res) {
 
 async function searchUsers(req, res) {
     try {
-        const { query } = req.query;
+        const { query, id, authId } = req.query;
 
-        if (!query || query.length < 2) {
-            return res.status(400).json({
-                success: false,
-                error: "Search query must be at least 2 characters long",
-            });
+        const where = {
+            authId: {
+                not: req.user.id,
+            },
+        };
+
+        if (id) {
+            where.id = parseInt(id);
+        }
+
+        if (authId) {
+            where.authId = parseInt(authId);
+        }
+
+        if (query) {
+            where.authId = {
+                ...where.authId,
+                equals: isNaN(parseInt(query)) ? undefined : parseInt(query),
+            };
+            if (where.authId.equals === undefined) {
+                delete where.authId.equals;
+            }
         }
 
         const users = await prisma.user.findMany({
-            where: {
-                authId: {
-                    not: req.user.id,
-                },
-            },
+            where,
             select: {
                 id: true,
                 authId: true,
                 createdAt: true,
+                updatedAt: true,
             },
             take: 10,
         });

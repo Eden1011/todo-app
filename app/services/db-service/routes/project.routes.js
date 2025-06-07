@@ -1,7 +1,6 @@
 const express = require("express");
 const { asyncHandler } = require("../middleware/error.handler");
 
-// Import rate limiters
 const {
     generalLimiter,
     createResourceLimiter,
@@ -9,7 +8,6 @@ const {
     deleteLimiter,
 } = require("../middleware/rate-limit");
 
-// Import validations
 const {
     createProjectValidation,
     updateProjectValidation,

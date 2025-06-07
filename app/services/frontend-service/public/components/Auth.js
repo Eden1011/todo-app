@@ -13,7 +13,6 @@ function Auth({ onLogin }) {
     const [message, setMessage] = useState("");
 
     useEffect(() => {
-        // Check for OAuth callback tokens in URL hash
         checkOAuthCallback();
     }, []);
 
@@ -26,14 +25,11 @@ function Auth({ onLogin }) {
             const refreshToken = urlParams.get("refresh_token");
 
             if (accessToken && refreshToken) {
-                // Store tokens and verify
                 AuthUtils.setToken(accessToken);
                 localStorage.setItem("refresh_token", refreshToken);
 
-                // Clear hash from URL
                 window.history.replaceState(null, null, " ");
 
-                // Verify token and get user data
                 verifyTokenAndLogin();
             }
         }
@@ -55,7 +51,6 @@ function Auth({ onLogin }) {
             [name]: value,
         }));
 
-        // Clear specific error when user starts typing
         if (errors[name]) {
             setErrors((prev) => ({
                 ...prev,
@@ -117,7 +112,6 @@ function Auth({ onLogin }) {
                         response.data.accessToken &&
                         response.data.refreshToken
                     ) {
-                        // Auto-login after registration
                         AuthUtils.setToken(response.data.accessToken);
                         localStorage.setItem(
                             "refresh_token",
@@ -151,7 +145,6 @@ function Auth({ onLogin }) {
                         response.data.refreshToken,
                     );
 
-                    // Get user data
                     const userData = await API.verifyToken();
                     onLogin(userData, response.data.accessToken);
                 }

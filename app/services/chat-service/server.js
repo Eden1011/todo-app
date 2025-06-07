@@ -11,11 +11,14 @@ const { authenticateToken } = require("./middleware/auth.middleware");
 const {
     errorHandler,
     notFound,
+    asyncHandler,
 } = require("./middleware/error-handler.middleware");
 const { generalLimiter } = require("./middleware/rate-limit.middleware");
 
 // Import socket handler
 const { initializeSocket } = require("./socket/chat.socket");
+
+const { autoCreateProjectChat } = require("./controllers/chat.controller");
 
 // Import routes
 const chatRoutes = require("./routes/chat.routes");
@@ -53,6 +56,9 @@ app.get("/health", (req, res) => {
             mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     });
 });
+
+// API auto-create db-service -> chat-service unprotected route
+app.post("/api/chats/auto-create", asyncHandler(autoCreateProjectChat));
 
 // API routes (protected)
 app.use("/api/chats", authenticateToken, chatRoutes);

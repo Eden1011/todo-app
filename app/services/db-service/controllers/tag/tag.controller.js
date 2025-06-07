@@ -3,9 +3,6 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Create a new tag
- */
 async function createTag(req, res) {
     try {
         const authId = req.user.id;
@@ -61,9 +58,6 @@ async function createTag(req, res) {
     }
 }
 
-/**
- * Get tags with pagination and filtering
- */
 async function getTags(req, res) {
     try {
         const authId = req.user.id;
@@ -130,9 +124,6 @@ async function getTags(req, res) {
     }
 }
 
-/**
- * Get tag by ID
- */
 async function getTagById(req, res) {
     try {
         const authId = req.user.id;
@@ -189,9 +180,6 @@ async function getTagById(req, res) {
     }
 }
 
-/**
- * Update tag
- */
 async function updateTag(req, res) {
     try {
         const authId = req.user.id;
@@ -260,9 +248,6 @@ async function updateTag(req, res) {
     }
 }
 
-/**
- * Delete tag
- */
 async function deleteTag(req, res) {
     try {
         const authId = req.user.id;
@@ -315,9 +300,6 @@ async function deleteTag(req, res) {
     }
 }
 
-/**
- * Get tag statistics
- */
 async function getTagStats(req, res) {
     try {
         const authId = req.user.id;
@@ -365,9 +347,6 @@ async function getTagStats(req, res) {
     }
 }
 
-/**
- * Get popular tags (most used)
- */
 async function getPopularTags(req, res) {
     try {
         const authId = req.user.id;

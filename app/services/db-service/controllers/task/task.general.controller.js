@@ -1,5 +1,9 @@
 const { PrismaClient } = require("@prisma/client");
 const { getOrCreateUser } = require("../user/user.controller");
+const {
+    createNotification,
+    notifyTaskAssigned,
+} = require("../notification/notification.controller");
 
 const prisma = new PrismaClient();
 
@@ -172,6 +176,17 @@ async function createTask(req, res) {
                 },
             },
         });
+
+        await createNotification(
+            user.id,
+            "TASK_STATUS_CHANGED",
+            `Task '${task.title}' has been created`,
+            task.id,
+        );
+
+        if (assigneeId && assigneeId !== user.id) {
+            await notifyTaskAssigned(task.id, assigneeId, authId);
+        }
 
         res.status(201).json({
             success: true,
@@ -669,6 +684,26 @@ async function updateTask(req, res) {
             },
         });
 
+        const usersToNotify = [];
+        if (existingTask.ownerId !== user.id) {
+            usersToNotify.push(existingTask.ownerId);
+        }
+        if (existingTask.assigneeId && existingTask.assigneeId !== user.id) {
+            usersToNotify.push(existingTask.assigneeId);
+        }
+        usersToNotify.push(user.id);
+
+        if (usersToNotify.length > 0) {
+            for (const userId of usersToNotify) {
+                await createNotification(
+                    userId,
+                    "TASK_STATUS_CHANGED",
+                    `Task '${taskWithIncludes.title}' has been updated`,
+                    taskId,
+                );
+            }
+        }
+
         res.json({
             success: true,
             data: taskWithIncludes,
@@ -809,6 +844,10 @@ async function assignTask(req, res) {
                 project: { select: { id: true, name: true } },
             },
         });
+
+        if (assigneeIdToSet) {
+            await notifyTaskAssigned(taskId, assigneeIdToSet, authId);
+        }
 
         res.json({
             success: true,

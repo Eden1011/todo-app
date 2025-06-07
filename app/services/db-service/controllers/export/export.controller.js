@@ -3,9 +3,6 @@ const { getOrCreateUser } = require("../user/user.controller");
 
 const prisma = new PrismaClient();
 
-/**
- * Export tasks to CSV format
- */
 async function exportTasksToCSV(req, res) {
     try {
         const authId = req.user.id;
@@ -18,7 +15,6 @@ async function exportTasksToCSV(req, res) {
             includeArchived = false,
         } = req.query;
 
-        // Build where clause
         const where = {
             OR: [{ ownerId: user.id }, { assigneeId: user.id }],
         };
@@ -108,9 +104,6 @@ async function exportTasksToCSV(req, res) {
     }
 }
 
-/**
- * Export tasks to JSON format
- */
 async function exportTasksToJSON(req, res) {
     try {
         const authId = req.user.id;
@@ -124,7 +117,6 @@ async function exportTasksToJSON(req, res) {
             detailed = true,
         } = req.query;
 
-        // Build where clause
         const where = {
             OR: [{ ownerId: user.id }, { assigneeId: user.id }],
         };
@@ -197,9 +189,6 @@ async function exportTasksToJSON(req, res) {
     }
 }
 
-/**
- * Export projects to CSV format
- */
 async function exportProjectsToCSV(req, res) {
     try {
         const authId = req.user.id;
@@ -207,7 +196,6 @@ async function exportProjectsToCSV(req, res) {
 
         const { ownedOnly = false } = req.query;
 
-        // Build where clause
         const where =
             ownedOnly === "true"
                 ? { ownerId: user.id }
@@ -281,9 +269,6 @@ async function exportProjectsToCSV(req, res) {
     }
 }
 
-/**
- * Export projects to JSON format
- */
 async function exportProjectsToJSON(req, res) {
     try {
         const authId = req.user.id;
@@ -291,7 +276,6 @@ async function exportProjectsToJSON(req, res) {
 
         const { ownedOnly = false, includeTasks = false } = req.query;
 
-        // Build where clause
         const where =
             ownedOnly === "true"
                 ? { ownerId: user.id }
@@ -356,9 +340,6 @@ async function exportProjectsToJSON(req, res) {
     }
 }
 
-/**
- * Get export statistics and available formats
- */
 async function getExportInfo(req, res) {
     try {
         const authId = req.user.id;
