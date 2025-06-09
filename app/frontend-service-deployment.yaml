@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (ae2a3940)
+  labels:
+    io.kompose.service: frontend-service
+  name: frontend-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: frontend-service
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (ae2a3940)
+      labels:
+        io.kompose.service: frontend-service
+    spec:
+      containers:
+        - env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3001"
+          image: frontend-service
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - --no-verbose
+                - --tries=1
+                - --spider
+                - http://localhost:3001/
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 10
+          name: todo-frontend-service
+          ports:
+            - containerPort: 3001
+              protocol: TCP
+      restartPolicy: Always
