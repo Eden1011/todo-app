@@ -1,3 +1,19 @@
+secrets:
+    mysql_root_password:
+        file: ./secrets/mysql_root_password.txt
+    mysql_password:
+        file: ./secrets/mysql_password.txt
+    mongodb_password:
+        file: ./secrets/mongodb_password.txt
+    access_token_secret:
+        file: ./secrets/access_token_secret.txt
+    refresh_token_secret:
+        file: ./secrets/refresh_token_secret.txt
+    smtp_password:
+        file: ./secrets/smtp_password.txt
+    google_client_secret:
+        file: ./secrets/google_client_secret.txt
+
 services:
     # MariaDB Database
     mariadb:
@@ -5,10 +21,10 @@ services:
         container_name: todo-mariadb
         restart: unless-stopped
         environment:
-            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
             MYSQL_DATABASE: todo_main
             MYSQL_USER: todoapp
-            MYSQL_PASSWORD: password
+            MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
         ports:
             - "3306:3306"
         volumes:
@@ -16,6 +32,9 @@ services:
             - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
         networks:
             - todo-network
+        secrets:
+            - mysql_root_password
+            - mysql_password
         healthcheck:
             test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
             start_period: 10s
@@ -30,7 +49,7 @@ services:
         restart: unless-stopped
         environment:
             MONGO_INITDB_ROOT_USERNAME: admin
-            MONGO_INITDB_ROOT_PASSWORD: password
+            MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongodb_password
             MONGO_INITDB_DATABASE: chat_service
         ports:
             - "27017:27017"
@@ -38,6 +57,8 @@ services:
             - mongodb_data:/data/db
         networks:
             - todo-network
+        secrets:
+            - mongodb_password
         healthcheck:
             test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
             interval: 10s
@@ -50,14 +71,23 @@ services:
         build:
             context: ./services/auth-service
             dockerfile: Dockerfile
+            args:
+                NODE_VERSION: 18
+                ALPINE_VERSION: 3.18
+                BUILD_DATE: ${BUILD_DATE:-unknown}
+                VERSION: ${VERSION:-1.0.0}
+                SERVICE_NAME: auth-service
+            platforms:
+                - linux/amd64
+                - linux/arm64
         container_name: todo-auth-service
         restart: unless-stopped
         environment:
             NODE_ENV: production
             PORT: 3000
-            DATABASE_URL: "mysql://todoapp:password@mariadb:3306/auth_service"
-            ACCESS_TOKEN_SECRET: "75a09b812d16c5c9bdadfce8fb6daa032a0ffb4046857c8c505fd7f739630ac4bb7f79749d52e9de1e43465925d812498dccbfce9252aa12db2103fe4e7c1af"
-            REFRESH_TOKEN_SECRET: "73d26f6f100ba8fd113db4d1b17ed484b53f8bf852d05879894b37f66f0c7abbd4f9b53d5e162438299b997460fdd3f932c11c981ba4bb84a1be4ad7048962b"
+            DATABASE_URL: "mysql://todoapp:$(cat /run/secrets/mysql_password)@mariadb:3306/auth_service"
+            ACCESS_TOKEN_SECRET_FILE: /run/secrets/access_token_secret
+            REFRESH_TOKEN_SECRET_FILE: /run/secrets/refresh_token_secret
             REFRESH_TOKEN_EXPIRATION_DATE: "7d"
             ACCESS_TOKEN_EXPIRATION: "15m"
             EMAIL_EXPIRATION: "1d"
@@ -67,10 +97,10 @@ services:
             SMTP_HOST: "smtp.gmail.com"
             SMTP_PORT: "587"
             SMTP_USER: "glovkakrzys252@gmail.com"
-            SMTP_PASS: "hdoj srmy ivcr wovr"
+            SMTP_PASS_FILE: /run/secrets/smtp_password
             FROM_EMAIL: "glovkakrzys252@gmail.com"
             GOOGLE_CLIENT_ID: "672707256810-dg697akric7qush3aafdsfg01nlat90i.apps.googleusercontent.com"
-            GOOGLE_CLIENT_SECRET: "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"
+            GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
             LOCAL_AUTH_URI: "local"
             LOCAL_EMAIL_VERIFY_URI: "email"
             OAUTH_URI: "oauth"
@@ -84,6 +114,12 @@ services:
                 condition: service_healthy
         networks:
             - todo-network
+        secrets:
+            - mysql_password
+            - access_token_secret
+            - refresh_token_secret
+            - smtp_password
+            - google_client_secret
         healthcheck:
             test:
                 [
@@ -103,18 +139,27 @@ services:
         build:
             context: ./services/db-service
             dockerfile: Dockerfile
+            args:
+                NODE_VERSION: 18
+                ALPINE_VERSION: 3.18
+                BUILD_DATE: ${BUILD_DATE:-unknown}
+                VERSION: ${VERSION:-1.0.0}
+                SERVICE_NAME: db-service
+            platforms:
+                - linux/amd64
+                - linux/arm64
         container_name: todo-db-service
         restart: unless-stopped
         environment:
             NODE_ENV: production
             PORT: 4000
-            DATABASE_URL: "mysql://todoapp:password@mariadb:3306/db_service"
+            DATABASE_URL: "mysql://todoapp:$(cat /run/secrets/mysql_password)@mariadb:3306/db_service"
             AUTH_SERVICE_URL: "http://auth-service:3000"
             CHAT_SERVICE_URL: "http://chat-service:5000"
             SMTP_HOST: "smtp.gmail.com"
             SMTP_PORT: "587"
             SMTP_USER: "glovkakrzys252@gmail.com"
-            SMTP_PASS: "hdoj srmy ivcr wovr"
+            SMTP_PASS_FILE: /run/secrets/smtp_password
             FROM_EMAIL: "glovkakrzys252@gmail.com"
             APP_NAME: "Todo App"
             DISABLE_RATE_LIMIT: "true"
@@ -127,6 +172,9 @@ services:
                 condition: service_healthy
         networks:
             - todo-network
+        secrets:
+            - mysql_password
+            - smtp_password
         healthcheck:
             test:
                 [
@@ -146,15 +194,24 @@ services:
         build:
             context: ./services/chat-service
             dockerfile: Dockerfile
+            args:
+                NODE_VERSION: 18
+                ALPINE_VERSION: 3.18
+                BUILD_DATE: ${BUILD_DATE:-unknown}
+                VERSION: ${VERSION:-1.0.0}
+                SERVICE_NAME: chat-service
+            platforms:
+                - linux/amd64
+                - linux/arm64
         container_name: todo-chat-service
         restart: unless-stopped
         environment:
             NODE_ENV: production
             PORT: 5000
-            MONGODB_URI: "mongodb://admin:password@mongodb:27017/chat_service?authSource=admin"
+            MONGODB_URI: "mongodb://admin:$(cat /run/secrets/mongodb_password)@mongodb:27017/chat_service?authSource=admin"
             AUTH_SERVICE_URL: "http://auth-service:3000"
             DB_SERVICE_URL: "http://db-service:4000"
-            ACCESS_TOKEN_SECRET: "75a09b812d16c5c9bdadfce8fb6daa032a0ffb4046857c8c505fd7f739630ac4bb7f79749d52e9de1e43465925d812498dccbfce9252aa12db2103fe4e7c1af"
+            ACCESS_TOKEN_SECRET_FILE: /run/secrets/access_token_secret
             CORS_ORIGIN: "http://localhost:3001"
             DISABLE_RATE_LIMIT: "true"
         ports:
@@ -168,6 +225,9 @@ services:
                 condition: service_healthy
         networks:
             - todo-network
+        secrets:
+            - mongodb_password
+            - access_token_secret
         healthcheck:
             test:
                 [
@@ -187,6 +247,15 @@ services:
         build:
             context: ./services/frontend-service
             dockerfile: Dockerfile
+            args:
+                NODE_VERSION: 18
+                ALPINE_VERSION: 3.18
+                BUILD_DATE: ${BUILD_DATE:-unknown}
+                VERSION: ${VERSION:-1.0.0}
+                SERVICE_NAME: frontend-service
+            platforms:
+                - linux/amd64
+                - linux/arm64
         container_name: todo-frontend-service
         restart: unless-stopped
         environment:
@@ -220,9 +289,22 @@ services:
 volumes:
     mariadb_data:
         driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ./data/mariadb
     mongodb_data:
         driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ./data/mongodb
 
 networks:
     todo-network:
         driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.0.0/16
+        driver_opts:
+            com.docker.network.bridge.name: todo-br0

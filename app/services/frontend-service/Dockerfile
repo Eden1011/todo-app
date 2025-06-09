@@ -1,37 +1,101 @@
-# Use Node.js LTS version
-FROM node:18-alpine
+# Multi-stage build dla optymalizacji
+ARG NODE_VERSION=18
+ARG ALPINE_VERSION=3.18
 
-# Install required packages for healthcheck
-RUN apk add --no-cache wget
+# Build stage
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-# Set working directory
+# Build arguments
+ARG BUILD_DATE
+ARG VERSION=1.0.0
+ARG SERVICE_NAME=frontend-service
+
+# Labels for metadata
+LABEL maintainer="todo-app-team"
+LABEL build-date=${BUILD_DATE}
+LABEL version=${VERSION}
+LABEL service=${SERVICE_NAME}
+
+# Install build dependencies
+RUN apk add --no-cache --virtual .build-deps \
+    python3 \
+    make \
+    g++
+
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies (including dev dependencies for build)
+RUN npm ci && npm cache clean --force
 
-# Copy application code
+# Copy source code
 COPY . .
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Build application if there's a build script
+RUN if grep -q '"build":' package.json; then npm run build; fi
 
-# Change ownership of the app directory
+# Remove build dependencies
+RUN apk del .build-deps
+
+# Production stage  
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS production
+
+# Runtime arguments
+ARG NODE_ENV=production
+ARG PORT=3001
+ARG SERVICE_NAME=frontend-service
+
+# Environment variables
+ENV NODE_ENV=${NODE_ENV}
+ENV PORT=${PORT}
+ENV SERVICE_NAME=${SERVICE_NAME}
+
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    wget \
+    curl \
+    dumb-init
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy application code from builder
+COPY --from=builder /app/*.js ./
+COPY --from=builder /app/public ./public/
+COPY --from=builder /app/views ./views/
+COPY --from=builder /app/routes ./routes/
+COPY --from=builder /app/middleware ./middleware/
+
+# Copy build output if exists
+COPY --from=builder /app/dist ./dist/ 2>/dev/null || :
+COPY --from=builder /app/build ./build/ 2>/dev/null || :
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+# Change ownership
 RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
 
 # Expose port
-EXPOSE 3001
+EXPOSE ${PORT}
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/ || exit 1
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
 CMD ["node", "server.js"]
