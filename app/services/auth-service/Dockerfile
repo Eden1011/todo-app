@@ -36,7 +36,7 @@ COPY prisma ./prisma/
 # Generate Prisma client
 RUN npx prisma generate
 
-# Copy source code
+# Copy ALL source code
 COPY . .
 
 # Remove build dependencies
@@ -73,11 +73,8 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/prisma ./prisma/
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
 
-# Copy application code
-COPY --from=builder /app/*.js ./
-COPY --from=builder /app/routes ./routes/
-COPY --from=builder /app/middleware ./middleware/
-COPY --from=builder /app/utils ./utils/
+# Copy ALL application code from builder (excluding what's in .dockerignore)
+COPY --from=builder /app .
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

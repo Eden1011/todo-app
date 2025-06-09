@@ -30,7 +30,7 @@ COPY package*.json ./
 # Install ALL dependencies (including dev dependencies for build)
 RUN npm ci && npm cache clean --force
 
-# Copy source code
+# Copy ALL source code
 COPY . .
 
 # Remove build dependencies  
@@ -63,13 +63,8 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy application code from builder
-COPY --from=builder /app/*.js ./
-COPY --from=builder /app/routes ./routes/
-COPY --from=builder /app/middleware ./middleware/
-COPY --from=builder /app/utils ./utils/
-COPY --from=builder /app/models ./models/
-COPY --from=builder /app/socket ./socket/
+# Copy ALL application code from builder (excluding what's in .dockerignore)
+COPY --from=builder /app .
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
