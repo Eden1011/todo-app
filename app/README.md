@@ -1,3 +1,39 @@
+# How to run?
+
+```text
+minikube start
+
+minikube addons enable ingress
+minikube addons enable metrics-server
+minikube addons enable storage-provisioner
+
+eval $(minikube -p minikube docker-env)
+
+cd services/auth-service
+docker build -t auth-service:latest .
+
+cd ../db-service
+docker build -t db-service:latest .
+
+cd ../chat-service
+docker build -t chat-service:latest .
+
+cd ../frontend-service
+docker build -t frontend-service:latest .
+
+cd ../..
+
+kubectl apply -f k8s/todo-app-k8s.yaml
+
+kubectl get pods
+
+kubectl port-forward service/auth-service 3000:3000 &
+kubectl port-forward service/db-service 4000:4000 &
+kubectl port-forward service/chat-service 5000:5000 &
+kubectl port-forward service/frontend-service 3001:3001 &
+
+```
+
 # Todo App Microservices API Documentation
 
 ## Overview
