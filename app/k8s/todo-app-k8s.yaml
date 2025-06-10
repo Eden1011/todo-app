@@ -3,7 +3,7 @@
 # ==============================================
 
 # ==============================================
-# SECRETS - Secure management of sensitive data
+# SECRETS
 # ==============================================
 
 apiVersion: v1
@@ -13,18 +13,17 @@ metadata:
     namespace: default
 type: Opaque
 data:
-    # Base64 encoded values
-    mysql-root-password: cm9vdHBhc3N3b3Jk # rootpassword
-    mysql-password: cGFzc3dvcmQ= # password
-    mongodb-password: cGFzc3dvcmQ= # password
+    mysql-root-password: cm9vdHBhc3N3b3Jk
+    mysql-password: cGFzc3dvcmQ=
+    mongodb-password: cGFzc3dvcmQ=
     access-token-secret: NzVhMDliODEyZDE2YzVjOWJkYWRmY2U4ZmI2ZGFhMDMyYTBmZmI0MDQ2ODU3YzhjNTA1ZmQ3ZjczOTYzMGFjNGJiN2Y3OTc0OWQ1MmU5ZGUxZTQzNDY1OTI1ZDgxMjQ5OGRjY2JmY2U5MjUyYWExMmRiMjEwM2ZlNGU3YzFhZg==
     refresh-token-secret: NzNkMjZmNmYxMDBiYThmZDExM2RiNGQxYjE3ZWQ0ODRiNTNmOGJmODUyZDA1ODc5ODk0YjM3ZjY2ZjBjN2FiYmQ0ZjliNTNkNWUxNjI0MzgyOTliOTk3NDYwZmRkM2Y5MzJjMTFjOTgxYmE0YmI4NGExYmU0YWQ3MDQ4OTYyYg==
-    smtp-password: aGRvaiBzcm15IGl2Y3Igd292cg== # hdoj srmy ivcr wovr
-    google-client-secret: R09DU1BYLXNYRU1fSndEQzVHenlSMWlzcG1TQWpKWXlEdA== # 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
+    smtp-password: aGRvaiBzcm15IGl2Y3Igd292cg==
+    google-client-secret: R09DU1BYLXNYRU1fSndEQzVHenlSMWlzcG1TQWpKWXlEdA==
 
 ---
 # ==============================================
-# CONFIGMAPS - Non-sensitive configuration
+# CONFIGMAPS
 # ==============================================
 
 apiVersion: v1
@@ -767,7 +766,7 @@ spec:
 
 ---
 # ==============================================
-# INGRESS - External Traffic Access
+# INGRESS
 # ==============================================
 
 apiVersion: networking.k8s.io/v1
