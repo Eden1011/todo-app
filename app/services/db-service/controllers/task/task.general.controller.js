@@ -4,21 +4,9 @@ const {
     createNotification,
     notifyTaskAssigned,
 } = require("../notification/notification.controller");
+const { checkProjectWriteAccess } = require("../access/project.access.js");
 
 const prisma = new PrismaClient();
-
-async function checkProjectWriteAccess(projectId, userId) {
-    if (!projectId) return true;
-
-    const member = await prisma.projectMember.findFirst({
-        where: {
-            projectId: projectId,
-            userId: userId,
-            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
-        },
-    });
-    return !!member;
-}
 
 async function createTask(req, res) {
     try {
@@ -31,14 +19,13 @@ async function createTask(req, res) {
             priority = "MEDIUM",
             status = "TODO",
             dueDate,
+            categoryIds: categoryIdsReq,
+            tagIds: tagIdsReq,
+            projectId: projectIdFromBody,
+            assigneeAuthId: assigneeAuthIdFromBody,
         } = req.body;
 
-        let categoryIdsReq = req.body.categoryIds;
-        let tagIdsReq = req.body.tagIds;
-        let projectIdFromBody = req.body.projectId;
-        let assigneeAuthIdFromBody = req.body.assigneeAuthId;
-
-        if (!title || title.trim() === "") {
+        if (!title) {
             return res.status(400).json({
                 success: false,
                 error: "Title is required and cannot be empty.",
