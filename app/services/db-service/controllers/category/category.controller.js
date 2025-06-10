@@ -10,13 +10,6 @@ async function createCategory(req, res) {
 
         const { name, color } = req.body;
 
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                error: "Category name is required",
-            });
-        }
-
         // Check if category with this name already exists for user
         const existingCategory = await prisma.category.findFirst({
             where: {
@@ -351,13 +344,6 @@ async function bulkDeleteCategories(req, res) {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const { categoryIds } = req.body;
-
-        if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Category IDs array is required",
-            });
-        }
 
         // Check if all categories exist and belong to user
         const categories = await prisma.category.findMany({

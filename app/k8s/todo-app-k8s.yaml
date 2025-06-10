@@ -343,6 +343,11 @@ spec:
                             secretKeyRef:
                                 name: todo-app-secrets
                                 key: google-client-secret
+                      - name: CORS_ORIGIN
+                        valueFrom:
+                            configMapKeyRef:
+                                name: todo-app-config
+                                key: cors-origin
                       - name: APP_NAME
                         valueFrom:
                             configMapKeyRef:
@@ -380,7 +385,7 @@ spec:
                                 key: google-client-id
                       - name: ACCESS_TOKEN_EXPIRATION
                         value: "15m"
-                      - name: REFRESH_TOKEN_EXPIRATION_DATE
+                      - name: REFRESH_TOKEN_EXPIRATION
                         value: "7d"
                       - name: EMAIL_EXPIRATION
                         value: "1d"

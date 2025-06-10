@@ -10,13 +10,6 @@ async function createTag(req, res) {
 
         const { name, color } = req.body;
 
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                error: "Tag name is required",
-            });
-        }
-
         // Check if tag with this name already exists for user
         const existingTag = await prisma.tag.findFirst({
             where: {
@@ -351,7 +344,7 @@ async function getPopularTags(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const limit = parseInt(req.query.limit) || 10;
+        const { limit = 10 } = req.query;
 
         const tags = await prisma.tag.findMany({
             where: {
@@ -367,7 +360,7 @@ async function getPopularTags(req, res) {
                     _count: "desc",
                 },
             },
-            take: limit,
+            take: parseInt(limit),
         });
 
         res.json({

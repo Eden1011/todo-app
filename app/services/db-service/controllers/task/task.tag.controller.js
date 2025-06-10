@@ -1,20 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const { getOrCreateUser } = require("../user/user.controller");
+const { checkProjectWriteAccess } = require("../access/project.access.js");
 
 const prisma = new PrismaClient();
-
-async function checkProjectWriteAccess(projectId, userId) {
-    if (!projectId) return true;
-
-    const member = await prisma.projectMember.findFirst({
-        where: {
-            projectId: projectId,
-            userId: userId,
-            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
-        },
-    });
-    return !!member;
-}
 
 async function addTagToTask(req, res) {
     try {
@@ -22,13 +10,6 @@ async function addTagToTask(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
         const { tagId } = req.body;
-
-        if (!tagId) {
-            return res.status(400).json({
-                success: false,
-                error: "Tag ID is required",
-            });
-        }
 
         const task = await prisma.task.findFirst({
             where: {
@@ -346,7 +327,7 @@ async function getPopularTagCombinations(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const limit = parseInt(req.query.limit) || 10;
+        const { limit = 10 } = req.query;
 
         const tagCombinations = await prisma.tagOnTask.findMany({
             where: {
@@ -387,7 +368,7 @@ async function getPopularTagCombinations(req, res) {
 
         const popularCombinations = Object.entries(combinationCounts)
             .sort(([, a], [, b]) => b - a)
-            .slice(0, limit)
+            .slice(0, parseInt(limit))
             .map(([combination, count]) => ({
                 combination,
                 count,

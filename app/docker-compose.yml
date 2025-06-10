@@ -67,7 +67,7 @@ services:
             DATABASE_URL: "mysql://todoapp:${MYSQL_PASSWORD}@mariadb:3306/auth_service"
             ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
             REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-            REFRESH_TOKEN_EXPIRATION_DATE: "7d"
+            REFRESH_TOKEN_EXPIRATION: "7d"
             ACCESS_TOKEN_EXPIRATION: "15m"
             EMAIL_EXPIRATION: "1d"
             APP_NAME: "Todo App"

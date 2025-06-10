@@ -77,14 +77,14 @@ async function getUserActivity(req, res) {
     try {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
-        const limit = parseInt(req.query.limit) || 10;
+        const { limit = 10 } = req.query;
 
         const recentTasks = await prisma.task.findMany({
             where: {
                 OR: [{ ownerId: user.id }, { assigneeId: user.id }],
             },
             orderBy: { updatedAt: "desc" },
-            take: limit,
+            take: parseInt(limit),
             include: {
                 owner: {
                     select: { id: true, authId: true },
@@ -106,7 +106,7 @@ async function getUserActivity(req, res) {
                 ],
             },
             orderBy: { updatedAt: "desc" },
-            take: limit,
+            take: parseInt(limit),
             include: {
                 owner: {
                     select: { id: true, authId: true },

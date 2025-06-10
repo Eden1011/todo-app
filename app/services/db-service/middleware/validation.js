@@ -4,7 +4,9 @@ const createTaskValidation = [
     body("title")
         .isLength({ min: 1, max: 200 })
         .withMessage("Title must be between 1 and 200 characters")
-        .trim(),
+        .trim()
+        .notEmpty()
+        .withMessage("Title is required and cannot be empty"),
     body("description")
         .optional()
         .isLength({ max: 1000 })
@@ -26,25 +28,84 @@ const createTaskValidation = [
         .withMessage("Due date must be a valid ISO8601 date"),
     body("assigneeAuthId")
         .optional()
-        .isInt({ min: 1 })
-        .withMessage("Assignee auth ID must be a positive integer"),
+        .custom((value) => {
+            if (value === null || value === undefined || value === "") {
+                return true;
+            }
+            const parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                throw new Error("Assignee Auth ID must be a positive integer");
+            }
+            return true;
+        }),
     body("projectId")
         .optional()
-        .isInt({ min: 1 })
-        .withMessage("Project ID must be a positive integer"),
+        .custom((value) => {
+            if (value === null || value === undefined || value === "") {
+                return true;
+            }
+            const parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                throw new Error("Project ID must be a positive integer");
+            }
+            return true;
+        }),
     body("categoryIds")
         .optional()
-        .isArray()
-        .withMessage("Category IDs must be an array"),
-    body("categoryIds.*")
+        .custom((value) => {
+            if (!value) return true;
+
+            let parsedValue = value;
+            if (typeof value === "string") {
+                try {
+                    parsedValue = JSON.parse(value);
+                } catch (e) {
+                    parsedValue = [];
+                }
+            }
+
+            if (!Array.isArray(parsedValue)) {
+                throw new Error("Category IDs must be an array");
+            }
+
+            const validIds = parsedValue
+                .map((id) => parseInt(id, 10))
+                .filter((id) => !isNaN(id) && id > 0);
+
+            if (validIds.length !== parsedValue.length) {
+                throw new Error("All category IDs must be positive integers");
+            }
+
+            return true;
+        }),
+    body("tagIds")
         .optional()
-        .isInt({ min: 1 })
-        .withMessage("Each category ID must be a positive integer"),
-    body("tagIds").optional().isArray().withMessage("Tag IDs must be an array"),
-    body("tagIds.*")
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage("Each tag ID must be a positive integer"),
+        .custom((value) => {
+            if (!value) return true;
+
+            let parsedValue = value;
+            if (typeof value === "string") {
+                try {
+                    parsedValue = JSON.parse(value);
+                } catch (e) {
+                    parsedValue = [];
+                }
+            }
+
+            if (!Array.isArray(parsedValue)) {
+                throw new Error("Tag IDs must be an array");
+            }
+
+            const validIds = parsedValue
+                .map((id) => parseInt(id, 10))
+                .filter((id) => !isNaN(id) && id > 0);
+
+            if (validIds.length !== parsedValue.length) {
+                throw new Error("All tag IDs must be positive integers");
+            }
+
+            return true;
+        }),
 ];
 
 const updateTaskValidation = [
@@ -73,16 +134,41 @@ const updateTaskValidation = [
         ),
     body("dueDate")
         .optional()
-        .isISO8601()
-        .withMessage("Due date must be a valid ISO8601 date"),
+        .custom((value) => {
+            if (value === null || value === undefined) return true;
+            if (value && isNaN(new Date(value).getTime())) {
+                throw new Error("Invalid due date format");
+            }
+            return true;
+        }),
     body("assigneeAuthId")
         .optional()
-        .isInt({ min: 1 })
-        .withMessage("Assignee auth ID must be a positive integer"),
+        .custom((value) => {
+            if (value === null || value === undefined || value === "") {
+                return true;
+            }
+            const parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                throw new Error(
+                    "Assignee Auth ID must be a positive integer or null",
+                );
+            }
+            return true;
+        }),
     body("projectId")
         .optional()
-        .isInt({ min: 1 })
-        .withMessage("Project ID must be a positive integer"),
+        .custom((value) => {
+            if (value === null || value === undefined || value === "") {
+                return true;
+            }
+            const parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                throw new Error(
+                    "Project ID must be a positive integer or null",
+                );
+            }
+            return true;
+        }),
 ];
 
 const getTasksValidation = [
@@ -166,15 +252,23 @@ const updateTaskDueDateValidation = [
     ...taskIdParamValidation,
     body("dueDate")
         .optional()
-        .isISO8601()
-        .withMessage("Due date must be a valid ISO8601 date"),
+        .custom((value) => {
+            if (value === null || value === undefined) return true;
+            const parsedDate = new Date(value);
+            if (isNaN(parsedDate.getTime())) {
+                throw new Error("Invalid due date format");
+            }
+            return true;
+        }),
 ];
 
 const createCategoryValidation = [
     body("name")
         .isLength({ min: 1, max: 100 })
         .withMessage("Name must be between 1 and 100 characters")
-        .trim(),
+        .trim()
+        .notEmpty()
+        .withMessage("Category name is required"),
     body("color")
         .optional()
         .matches(/^#[0-9A-F]{6}$/i)
@@ -198,14 +292,18 @@ const addCategoryToTaskValidation = [
     ...taskIdParamValidation,
     body("categoryId")
         .isInt({ min: 1 })
-        .withMessage("Category ID must be a positive integer"),
+        .withMessage("Category ID must be a positive integer")
+        .notEmpty()
+        .withMessage("Category ID is required"),
 ];
 
 const createTagValidation = [
     body("name")
         .isLength({ min: 1, max: 50 })
         .withMessage("Name must be between 1 and 50 characters")
-        .trim(),
+        .trim()
+        .notEmpty()
+        .withMessage("Tag name is required"),
     body("color")
         .optional()
         .matches(/^#[0-9A-F]{6}$/i)
@@ -229,14 +327,18 @@ const addTagToTaskValidation = [
     ...taskIdParamValidation,
     body("tagId")
         .isInt({ min: 1 })
-        .withMessage("Tag ID must be a positive integer"),
+        .withMessage("Tag ID must be a positive integer")
+        .notEmpty()
+        .withMessage("Tag ID is required"),
 ];
 
 const createProjectValidation = [
     body("name")
         .isLength({ min: 1, max: 200 })
         .withMessage("Name must be between 1 and 200 characters")
-        .trim(),
+        .trim()
+        .notEmpty()
+        .withMessage("Project name is required"),
     body("description")
         .optional()
         .isLength({ max: 1000 })
@@ -262,7 +364,9 @@ const addMemberValidation = [
     ...idParamValidation,
     body("memberAuthId")
         .isInt({ min: 1 })
-        .withMessage("Member auth ID must be a positive integer"),
+        .withMessage("Member auth ID must be a positive integer")
+        .notEmpty()
+        .withMessage("Member authId is required"),
     body("role")
         .optional()
         .isIn(["OWNER", "ADMIN", "MEMBER", "VIEWER"])
@@ -276,7 +380,43 @@ const updateMemberRoleValidation = [
         .withMessage("Member ID must be a positive integer"),
     body("role")
         .isIn(["OWNER", "ADMIN", "MEMBER", "VIEWER"])
-        .withMessage("Role must be OWNER, ADMIN, MEMBER, or VIEWER"),
+        .withMessage("Role must be OWNER, ADMIN, MEMBER, or VIEWER")
+        .notEmpty()
+        .withMessage("Valid role is required"),
+];
+
+const assignTaskValidation = [
+    ...idParamValidation,
+    body("assigneeAuthId")
+        .optional()
+        .custom((value) => {
+            if (value === null || value === undefined || value === "") {
+                return true;
+            }
+            const parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                throw new Error(
+                    "Assignee Auth ID must be a positive integer or null",
+                );
+            }
+            return true;
+        }),
+];
+
+const statusParamValidation = [
+    param("status")
+        .isIn(["TODO", "IN_PROGRESS", "REVIEW", "DONE", "CANCELED"])
+        .withMessage(
+            "Invalid status. Valid statuses are: TODO, IN_PROGRESS, REVIEW, DONE, CANCELED",
+        ),
+];
+
+const priorityParamValidation = [
+    param("priority")
+        .isIn(["LOW", "MEDIUM", "HIGH", "URGENT"])
+        .withMessage(
+            "Invalid priority. Valid priorities are: LOW, MEDIUM, HIGH, URGENT",
+        ),
 ];
 
 const paginationValidation = [
@@ -330,6 +470,21 @@ const searchUserValidation = [
     }),
 ];
 
+const bulkDeleteCategoriesValidation = [
+    body("categoryIds")
+        .isArray({ min: 1 })
+        .withMessage("Category IDs array is required")
+        .custom((value) => {
+            if (!Array.isArray(value) || value.length === 0) {
+                throw new Error("Category IDs array is required");
+            }
+            return true;
+        }),
+    body("categoryIds.*")
+        .isInt({ min: 1 })
+        .withMessage("Each category ID must be a positive integer"),
+];
+
 function handleValidationErrors(req, res, next) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -361,8 +516,12 @@ module.exports = {
     updateProjectValidation,
     addMemberValidation,
     updateMemberRoleValidation,
+    assignTaskValidation,
+    statusParamValidation,
+    priorityParamValidation,
     searchUserValidation,
     paginationValidation,
     exportValidation,
+    bulkDeleteCategoriesValidation,
     handleValidationErrors,
 };

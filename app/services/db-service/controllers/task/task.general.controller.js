@@ -25,24 +25,18 @@ async function createTask(req, res) {
             assigneeAuthId: assigneeAuthIdFromBody,
         } = req.body;
 
-        if (!title) {
-            return res.status(400).json({
-                success: false,
-                error: "Title is required and cannot be empty.",
-            });
-        }
-
         let finalCategoryIds = [];
         if (categoryIdsReq) {
+            let parsedCategoryIds = categoryIdsReq;
             if (typeof categoryIdsReq === "string") {
                 try {
-                    categoryIdsReq = JSON.parse(categoryIdsReq);
+                    parsedCategoryIds = JSON.parse(categoryIdsReq);
                 } catch (e) {
-                    categoryIdsReq = [];
+                    parsedCategoryIds = [];
                 }
             }
-            if (Array.isArray(categoryIdsReq)) {
-                finalCategoryIds = categoryIdsReq
+            if (Array.isArray(parsedCategoryIds)) {
+                finalCategoryIds = parsedCategoryIds
                     .map((id) => parseInt(id, 10))
                     .filter((id) => !isNaN(id) && id > 0);
             }
@@ -50,15 +44,16 @@ async function createTask(req, res) {
 
         let finalTagIds = [];
         if (tagIdsReq) {
+            let parsedTagIds = tagIdsReq;
             if (typeof tagIdsReq === "string") {
                 try {
-                    tagIdsReq = JSON.parse(tagIdsReq);
+                    parsedTagIds = JSON.parse(tagIdsReq);
                 } catch (e) {
-                    tagIdsReq = [];
+                    parsedTagIds = [];
                 }
             }
-            if (Array.isArray(tagIdsReq)) {
-                finalTagIds = tagIdsReq
+            if (Array.isArray(parsedTagIds)) {
+                finalTagIds = parsedTagIds
                     .map((id) => parseInt(id, 10))
                     .filter((id) => !isNaN(id) && id > 0);
             }
@@ -71,12 +66,6 @@ async function createTask(req, res) {
             assigneeAuthIdFromBody !== ""
         ) {
             const parsedAssigneeAuthId = parseInt(assigneeAuthIdFromBody, 10);
-            if (isNaN(parsedAssigneeAuthId) || parsedAssigneeAuthId <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Assignee Auth ID must be a positive integer.",
-                });
-            }
             const assignee = await getOrCreateUser(parsedAssigneeAuthId);
             assigneeId = assignee.id;
         }
@@ -88,12 +77,6 @@ async function createTask(req, res) {
             projectIdFromBody !== ""
         ) {
             finalProjectId = parseInt(projectIdFromBody, 10);
-            if (isNaN(finalProjectId) || finalProjectId <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Project ID must be a positive integer.",
-                });
-            }
 
             const project = await prisma.project.findFirst({
                 where: {
@@ -208,17 +191,17 @@ async function getTasks(req, res) {
             sortOrder = "desc",
             dueDateFrom,
             dueDateTo,
+            projectId,
+            categoryId,
+            tagId,
+            assignedToMe,
         } = req.query;
 
-        let page = parseInt(req.query.page, 10) || 1;
-        let limit = parseInt(req.query.limit, 10) || 20;
+        let { page = 1, limit = 20 } = req.query;
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
         if (limit > 100) limit = 100;
         if (page < 1) page = 1;
-
-        let projectId = req.query.projectId;
-        let categoryId = req.query.categoryId;
-        let tagId = req.query.tagId;
-        let assignedToMeQuery = req.query.assignedToMe;
 
         const skip = (page - 1) * limit;
         const take = limit;
@@ -237,7 +220,7 @@ async function getTasks(req, res) {
             }
         }
 
-        if (assignedToMeQuery === "true") {
+        if (assignedToMe === "true") {
             where.assigneeId = user.id;
         }
 
@@ -341,13 +324,6 @@ async function getTaskById(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.id, 10);
 
-        if (isNaN(taskId) || taskId <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Task ID must be a positive integer.",
-            });
-        }
-
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -398,19 +374,17 @@ async function updateTask(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.id, 10);
 
-        if (isNaN(taskId) || taskId <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Task ID must be a positive integer.",
-            });
-        }
-
-        const { title, description, priority, status, dueDate } = req.body;
-
-        let categoryIdsReq = req.body.categoryIds;
-        let tagIdsReq = req.body.tagIds;
-        let assigneeAuthIdFromBody = req.body.assigneeAuthId;
-        let projectIdFromBody = req.body.projectId;
+        const {
+            title,
+            description,
+            priority,
+            status,
+            dueDate,
+            categoryIds: categoryIdsReq,
+            tagIds: tagIdsReq,
+            assigneeAuthId: assigneeAuthIdFromBody,
+            projectId: projectIdFromBody,
+        } = req.body;
 
         const existingTask = await prisma.task.findFirst({
             where: {
@@ -459,12 +433,6 @@ async function updateTask(req, res) {
                     updateData.projectId = null;
                 } else {
                     const parsedProjectId = parseInt(projectIdFromBody, 10);
-                    if (isNaN(parsedProjectId) || parsedProjectId <= 0) {
-                        return res.status(400).json({
-                            success: false,
-                            error: "Project ID must be a positive integer or null.",
-                        });
-                    }
 
                     const hasWriteAccess = await checkProjectWriteAccess(
                         parsedProjectId,
@@ -509,15 +477,6 @@ async function updateTask(req, res) {
                         assigneeAuthIdFromBody,
                         10,
                     );
-                    if (
-                        isNaN(parsedAssigneeAuthId) ||
-                        parsedAssigneeAuthId <= 0
-                    ) {
-                        return res.status(400).json({
-                            success: false,
-                            error: "Assignee Auth ID must be a positive integer or null.",
-                        });
-                    }
                     const assignee =
                         await getOrCreateUser(parsedAssigneeAuthId);
                     updateData.assigneeId = assignee.id;
@@ -607,9 +566,9 @@ async function updateTask(req, res) {
                 let finalCategoryIds = [];
                 if (typeof categoryIdsReq === "string") {
                     try {
-                        categoryIdsReq = JSON.parse(categoryIdsReq);
+                        finalCategoryIds = JSON.parse(categoryIdsReq);
                     } catch (e) {
-                        categoryIdsReq = [];
+                        finalCategoryIds = [];
                     }
                 }
                 if (Array.isArray(categoryIdsReq)) {
@@ -631,9 +590,9 @@ async function updateTask(req, res) {
                 let finalTagIds = [];
                 if (typeof tagIdsReq === "string") {
                     try {
-                        tagIdsReq = JSON.parse(tagIdsReq);
+                        finalTagIds = JSON.parse(tagIdsReq);
                     } catch (e) {
-                        tagIdsReq = [];
+                        finalTagIds = [];
                     }
                 }
                 if (Array.isArray(tagIdsReq)) {
@@ -710,13 +669,6 @@ async function deleteTask(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.id, 10);
 
-        if (isNaN(taskId) || taskId <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Task ID must be a positive integer.",
-            });
-        }
-
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
@@ -770,12 +722,6 @@ async function assignTask(req, res) {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.id, 10);
-        if (isNaN(taskId) || taskId <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: "Task ID must be a positive integer.",
-            });
-        }
         const { assigneeAuthId } = req.body;
 
         const task = await prisma.task.findFirst({
@@ -812,12 +758,6 @@ async function assignTask(req, res) {
             assigneeAuthId !== ""
         ) {
             const parsedAssigneeAuthId = parseInt(assigneeAuthId, 10);
-            if (isNaN(parsedAssigneeAuthId) || parsedAssigneeAuthId <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Assignee Auth ID must be a positive integer or null.",
-                });
-            }
             const assignee = await getOrCreateUser(parsedAssigneeAuthId);
             assigneeIdToSet = assignee.id;
         }

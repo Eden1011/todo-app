@@ -20,6 +20,9 @@ const {
     updateTaskDueDateValidation,
     addCategoryToTaskValidation,
     addTagToTaskValidation,
+    assignTaskValidation,
+    statusParamValidation,
+    priorityParamValidation,
     handleValidationErrors,
 } = require("../middleware/validation");
 
@@ -116,7 +119,7 @@ router.delete(
 router.post(
     "/:id/assign",
     updateLimiter,
-    idParamValidation,
+    assignTaskValidation,
     handleValidationErrors,
     asyncHandler(assignTask),
 );
@@ -138,7 +141,13 @@ router.get(
     asyncHandler(getTaskStatusHistory),
 );
 
-router.get("/status/:status", generalLimiter, asyncHandler(getTasksByStatus));
+router.get(
+    "/status/:status",
+    generalLimiter,
+    statusParamValidation,
+    handleValidationErrors,
+    asyncHandler(getTasksByStatus),
+);
 
 router.get(
     "/statistics/status",
@@ -158,6 +167,8 @@ router.put(
 router.get(
     "/priority/:priority",
     generalLimiter,
+    priorityParamValidation,
+    handleValidationErrors,
     asyncHandler(getTasksByPriority),
 );
 

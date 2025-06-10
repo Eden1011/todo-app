@@ -3,21 +3,9 @@ const { getOrCreateUser } = require("../user/user.controller");
 const {
     notifyDueDateReminder,
 } = require("../notification/notification.controller");
+const { checkProjectWriteAccess } = require("../access/project.access.js");
 
 const prisma = new PrismaClient();
-
-async function checkProjectWriteAccess(projectId, userId) {
-    if (!projectId) return true;
-
-    const member = await prisma.projectMember.findFirst({
-        where: {
-            projectId: projectId,
-            userId: userId,
-            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
-        },
-    });
-    return !!member;
-}
 
 async function updateTaskDueDate(req, res) {
     try {
@@ -29,12 +17,6 @@ async function updateTaskDueDate(req, res) {
         let parsedDueDate = null;
         if (dueDate) {
             parsedDueDate = new Date(dueDate);
-            if (isNaN(parsedDueDate.getTime())) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Invalid due date format",
-                });
-            }
         }
 
         const task = await prisma.task.findFirst({

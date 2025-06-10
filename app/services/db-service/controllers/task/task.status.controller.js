@@ -3,21 +3,9 @@ const { getOrCreateUser } = require("../user/user.controller");
 const {
     notifyTaskStatusChanged,
 } = require("../notification/notification.controller");
+const { checkProjectWriteAccess } = require("../access/project.access.js");
 
 const prisma = new PrismaClient();
-
-async function checkProjectWriteAccess(projectId, userId) {
-    if (!projectId) return true;
-
-    const member = await prisma.projectMember.findFirst({
-        where: {
-            projectId: projectId,
-            userId: userId,
-            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
-        },
-    });
-    return !!member;
-}
 
 async function updateTaskStatus(req, res) {
     try {
@@ -25,20 +13,6 @@ async function updateTaskStatus(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
         const { status } = req.body;
-
-        const validStatuses = [
-            "TODO",
-            "IN_PROGRESS",
-            "REVIEW",
-            "DONE",
-            "CANCELED",
-        ];
-        if (!status || !validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid status. Valid statuses are: ${validStatuses.join(", ")}`,
-            });
-        }
 
         const task = await prisma.task.findFirst({
             where: {
@@ -166,20 +140,6 @@ async function getTasksByStatus(req, res) {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const { status } = req.params;
-
-        const validStatuses = [
-            "TODO",
-            "IN_PROGRESS",
-            "REVIEW",
-            "DONE",
-            "CANCELED",
-        ];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid status. Valid statuses are: ${validStatuses.join(", ")}`,
-            });
-        }
 
         const {
             page = 1,

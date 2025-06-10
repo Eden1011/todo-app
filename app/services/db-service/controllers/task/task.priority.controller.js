@@ -1,20 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const { getOrCreateUser } = require("../user/user.controller");
+const { checkProjectWriteAccess } = require("../access/project.access.js");
 
 const prisma = new PrismaClient();
-
-async function checkProjectWriteAccess(projectId, userId) {
-    if (!projectId) return true;
-
-    const member = await prisma.projectMember.findFirst({
-        where: {
-            projectId: projectId,
-            userId: userId,
-            role: { in: ["OWNER", "ADMIN", "MEMBER"] },
-        },
-    });
-    return !!member;
-}
 
 async function updateTaskPriority(req, res) {
     try {
@@ -22,14 +10,6 @@ async function updateTaskPriority(req, res) {
         const user = await getOrCreateUser(authId);
         const taskId = parseInt(req.params.taskId);
         const { priority } = req.body;
-
-        const validPriorities = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-        if (!priority || !validPriorities.includes(priority)) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid priority. Valid priorities are: ${validPriorities.join(", ")}`,
-            });
-        }
 
         const task = await prisma.task.findFirst({
             where: {
@@ -88,14 +68,6 @@ async function getTasksByPriority(req, res) {
         const authId = req.user.id;
         const user = await getOrCreateUser(authId);
         const { priority } = req.params;
-
-        const validPriorities = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-        if (!validPriorities.includes(priority)) {
-            return res.status(400).json({
-                success: false,
-                error: `Invalid priority. Valid priorities are: ${validPriorities.join(", ")}`,
-            });
-        }
 
         const {
             page = 1,

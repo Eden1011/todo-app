@@ -15,13 +15,6 @@ async function createProject(req, res) {
 
         const { name, description } = req.body;
 
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                error: "Project name is required",
-            });
-        }
-
         const project = await prisma.project.create({
             data: {
                 name,
@@ -463,13 +456,6 @@ async function addMember(req, res) {
         const projectId = parseInt(req.params.id);
         const { memberAuthId, role = "MEMBER" } = req.body;
 
-        if (!memberAuthId) {
-            return res.status(400).json({
-                success: false,
-                error: "Member authId is required",
-            });
-        }
-
         // Check if user has admin access to project
         const currentMember = await prisma.projectMember.findFirst({
             where: {
@@ -535,13 +521,6 @@ async function updateMemberRole(req, res) {
         const projectId = parseInt(req.params.id);
         const memberId = parseInt(req.params.memberId);
         const { role } = req.body;
-
-        if (!role || !["OWNER", "ADMIN", "MEMBER", "VIEWER"].includes(role)) {
-            return res.status(400).json({
-                success: false,
-                error: "Valid role is required",
-            });
-        }
 
         // Check if user has owner access
         const currentMember = await prisma.projectMember.findFirst({
