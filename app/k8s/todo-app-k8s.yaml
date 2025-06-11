@@ -1,5 +1,5 @@
 # ==============================================
-# KUBERNETES MANIFESTS - TODO APP
+# KUBERNETES MANIFESTS
 # ==============================================
 
 # ==============================================
@@ -58,7 +58,7 @@ data:
 
 ---
 # ==============================================
-# PERSISTENT VOLUMES & CLAIMS
+# PERSISTENT VOLUMES AND CLAIMS
 # ==============================================
 
 apiVersion: v1
@@ -199,7 +199,8 @@ spec:
                           cpu: "500m"
             volumes:
                 - name: mariadb-storage
-                  emptyDir: {}
+                  persistentVolumeClaim:
+                      claimName: mariadb-data
                 - name: mariadb-init
                   configMap:
                       name: mariadb-init-config
@@ -273,7 +274,8 @@ spec:
                           cpu: "500m"
             volumes:
                 - name: mongodb-storage
-                  emptyDir: {}
+                  persistentVolumeClaim:
+                      claimName: mongodb-data
 
 ---
 # ==============================================
@@ -289,7 +291,7 @@ metadata:
         app: auth-service
         tier: backend
 spec:
-    replicas: 2
+    replicas: 1
     selector:
         matchLabels:
             app: auth-service
@@ -438,7 +440,7 @@ metadata:
         app: db-service
         tier: backend
 spec:
-    replicas: 2
+    replicas: 1
     selector:
         matchLabels:
             app: db-service
@@ -448,6 +450,15 @@ spec:
                 app: db-service
                 tier: backend
         spec:
+            initContainers:
+                - name: wait-for-mariadb
+                  image: busybox:1.35
+                  command:
+                      [
+                          "sh",
+                          "-c",
+                          'until nc -z mariadb 3306; do echo "Waiting for MariaDB..."; sleep 2; done;',
+                      ]
             containers:
                 - name: db-service
                   image: db-service:latest
@@ -544,6 +555,15 @@ spec:
                 app: chat-service
                 tier: backend
         spec:
+            initContainers:
+                - name: wait-for-mongodb
+                  image: busybox:1.35
+                  command:
+                      [
+                          "sh",
+                          "-c",
+                          'until nc -z mongodb 27017; do echo "Waiting for MongoDB..."; sleep 2; done;',
+                      ]
             containers:
                 - name: chat-service
                   image: chat-service:latest
@@ -610,7 +630,7 @@ metadata:
         app: frontend-service
         tier: frontend
 spec:
-    replicas: 3
+    replicas: 2
     selector:
         matchLabels:
             app: frontend-service
@@ -813,28 +833,11 @@ spec:
                                 number: 5000
 
 ---
-# Alternative LoadBalancer Service for external access
-apiVersion: v1
-kind: Service
-metadata:
-    name: frontend-loadbalancer
-    namespace: default
-    labels:
-        app: frontend-service
-spec:
-    type: LoadBalancer
-    ports:
-        - port: 80
-          targetPort: 3001
-          name: http
-    selector:
-        app: frontend-service
-
----
 # ==============================================
-# HORIZONTAL POD AUTOSCALERS (HPA)
+# HORIZONTAL POD AUTOSCALERS
 # ==============================================
 
+# Frontend HPA
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -846,22 +849,23 @@ spec:
         kind: Deployment
         name: frontend-service
     minReplicas: 2
-    maxReplicas: 10
+    maxReplicas: 8
     metrics:
         - type: Resource
           resource:
               name: cpu
               target:
                   type: Utilization
-                  averageUtilization: 70
+                  averageUtilization: 60
         - type: Resource
           resource:
               name: memory
               target:
                   type: Utilization
-                  averageUtilization: 80
+                  averageUtilization: 75
 
 ---
+# Auth service HPA
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -873,22 +877,23 @@ spec:
         kind: Deployment
         name: auth-service
     minReplicas: 1
-    maxReplicas: 5
+    maxReplicas: 4
     metrics:
         - type: Resource
           resource:
               name: cpu
               target:
                   type: Utilization
-                  averageUtilization: 70
+                  averageUtilization: 80
         - type: Resource
           resource:
               name: memory
               target:
                   type: Utilization
-                  averageUtilization: 80
+                  averageUtilization: 85
 
 ---
+# DB service HPA
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -900,41 +905,14 @@ spec:
         kind: Deployment
         name: db-service
     minReplicas: 1
-    maxReplicas: 5
+    maxReplicas: 3
     metrics:
         - type: Resource
           resource:
               name: cpu
               target:
                   type: Utilization
-                  averageUtilization: 70
-        - type: Resource
-          resource:
-              name: memory
-              target:
-                  type: Utilization
-                  averageUtilization: 80
-
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-    name: chat-service-hpa
-    namespace: default
-spec:
-    scaleTargetRef:
-        apiVersion: apps/v1
-        kind: Deployment
-        name: chat-service
-    minReplicas: 1
-    maxReplicas: 5
-    metrics:
-        - type: Resource
-          resource:
-              name: cpu
-              target:
-                  type: Utilization
-                  averageUtilization: 70
+                  averageUtilization: 75
         - type: Resource
           resource:
               name: memory

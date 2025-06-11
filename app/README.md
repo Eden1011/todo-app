@@ -1,6 +1,8 @@
 # How to run?
 
 ```text
+cd ./app
+
 minikube start
 
 minikube addons enable ingress
@@ -9,19 +11,7 @@ minikube addons enable storage-provisioner
 
 eval $(minikube -p minikube docker-env)
 
-cd services/auth-service
-docker build -t auth-service:latest .
-
-cd ../db-service
-docker build -t db-service:latest .
-
-cd ../chat-service
-docker build -t chat-service:latest .
-
-cd ../frontend-service
-docker build -t frontend-service:latest .
-
-cd ../..
+docker-compose build --parallel
 
 kubectl apply -f k8s/todo-app-k8s.yaml
 
@@ -32,6 +22,7 @@ kubectl port-forward service/db-service 4000:4000 &
 kubectl port-forward service/chat-service 5000:5000 &
 kubectl port-forward service/frontend-service 3001:3001 &
 
+(^prefrerably without &, because pods can sometimes drop port-forwarding when they restart, and with the '&' you'll never know)
 ```
 
 # Todo App Microservices API Documentation
